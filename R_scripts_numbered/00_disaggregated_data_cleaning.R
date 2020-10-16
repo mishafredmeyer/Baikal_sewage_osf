@@ -17,6 +17,12 @@ library(spdplyr)
 
 # 2. Load and clean PPCP data ---------------------------------------------
 
+# Station IDs
+st_ids <- c("BK-1", "BGO-3", "BK-2", "BK-3", "BGO-1", "BGO-2", "KD-1",
+            "KD-2", "MS-1", "SM-1", "OS-1", "OS-2", "EM-1", "LI-1", "LI-2",
+            "LI-3", "OS-3")
+
+
 # Raw data
 ppcp_orig <- read.csv(file = "../original_data/PPCP_Baikal_orig_20180524.csv",
                       header = TRUE)
@@ -24,23 +30,7 @@ ppcp_orig <- read.csv(file = "../original_data/PPCP_Baikal_orig_20180524.csv",
 # Select variables and sites of interest, sum PPCPs
 ppcp <- ppcp_orig %>%
   clean_names() %>%
-  filter(sample_id == "LI-1" |
-           sample_id == "LI-2" |
-           sample_id == "LI-3" |
-           sample_id == "BK-1" |
-           sample_id == "BK-2" |
-           sample_id == "BK-3" |
-           sample_id == "BGO-1" |
-           sample_id == "BGO-2" |
-           sample_id == "BGO-3" |
-           sample_id == "KD-1" |
-           sample_id == "KD-2" |
-           sample_id == "EM-1" |
-           sample_id == "MS-1" |
-           sample_id == "SM-1" |
-           sample_id == "OS-1" |
-           sample_id == "OS-2" |
-           sample_id == "OS-3") %>%
+  filter(sample_id %in% st_ids) %>%
   group_by(sample_id) %>%
   rename(paraxanthine = x1_7_dimethylxanthine, 
          site = sample_id) %>%
@@ -84,23 +74,7 @@ chla_orig <- read.csv(file = "../original_data/chlorophyll_20170117.csv",
 # Select sites of interest and take average chl a by site
 chlorophylla <- chla_orig %>%
   select(-Chlorophyll) %>%
-  filter(Station == "LI-1" |
-           Station == "LI-2" |
-           Station == "LI-3" |
-           Station == "BK-1" |
-           Station == "BK-2" |
-           Station == "BK-3" |
-           Station == "BGO-1" |
-           Station == "BGO-2" |
-           Station == "BGO-3" |
-           Station == "KD-1" |
-           Station == "KD-2" |
-           Station == "EM-1" |
-           Station == "MS-1" |
-           Station == "SM-1" |
-           Station == "OS-1" |
-           Station == "OS-2" |
-           Station == "OS-3") %>%
+  filter(Station %in% st_ids) %>%
   clean_names(case = "snake") %>%
   # Correct unintended formatting as dates
   mutate(replicate = as.character(replicate),
