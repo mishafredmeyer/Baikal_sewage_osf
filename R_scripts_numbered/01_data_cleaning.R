@@ -37,10 +37,7 @@ nutrients_orig <- read.csv(file = "../clean_disaggregated_data/nutrients.csv",
 # Take nutrients averages by site
 nutrients <- nutrients_orig %>%
   group_by(site) %>%
-  summarize(mean_nh4_mg_dm3 = mean(nh4_mg_dm3),
-            mean_no3_mg_dm3 = mean(no3_mg_dm3),
-            mean_tp_mg_dm3 = mean(tp_mg_dm3),
-            mean_tpo43_mg_dm3 = mean(tpo43_mg_dm3)) 
+  summarize(across(-replicate, mean, .names = "mean_{.col}"))
 
 head(nutrients)
 
