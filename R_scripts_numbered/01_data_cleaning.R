@@ -83,12 +83,10 @@ write.csv(x = metadata, file = "../cleaned_data/metadata.csv",
 inverts_orig <- read.csv(file = "../clean_disaggregated_data/invertebrates.csv",
                          header = TRUE)
 
-# Take mean counts by taxon, flesh out taxonomic info, spread to wide format
+# Take mean counts by taxon
 inverts_wide <- inverts_orig %>%
-  gather(key = taxon, value = sum_count, Acroloxidae:Valvatidae) %>%  
-  group_by(site, taxon) %>%
-  summarize(mean_count = mean(sum_count)) %>%
-  spread(key = taxon, value = mean_count)
+  group_by(site) %>%
+  summarize(across(-replicate, mean))
 
 head(inverts_wide)
 
