@@ -103,11 +103,9 @@ periphyton_orig <- read.csv(file = "../clean_disaggregated_data/periphyton.csv",
 periphyton_summarized <- periphyton_orig %>%
   select(-contains("filament")) %>%
   filter(!is.na(diatom)) %>%
-  gather(key = taxon, value = count, diatom:desmidales) %>% 
-  group_by(site, taxon) %>%
-  summarize(mean_count = mean(count)) %>% 
-  ungroup() %>%
-  spread(key = taxon, value = mean_count) 
+  group_by(site) %>%
+  summarize(across(-one_of(c("replicate", "comments", "subsamples_counted")), mean)) %>%
+  select(site, desmidales, diatom, pediastrum, spirogyra, tetrasporales, ulothrix)
 
 head(periphyton_summarized)
 
