@@ -27,11 +27,10 @@ st_ids <- c("BK-1", "BGO-3", "BK-2", "BK-3", "BGO-1", "BGO-2", "KD-1",
 ppcp_orig <- read.csv(file = "../original_data/PPCP_Baikal_orig_20180524.csv",
                       header = TRUE)
 
-# Select variables and sites of interest, sum PPCPs
+# Select variables and sites of interest
 ppcp <- ppcp_orig %>%
   clean_names() %>%
   filter(sample_id %in% st_ids) %>%
-  group_by(sample_id) %>%
   rename(paraxanthine = x1_7_dimethylxanthine, 
          site = sample_id) %>%
   mutate(collection_year = year(mdy(collection_date)),
