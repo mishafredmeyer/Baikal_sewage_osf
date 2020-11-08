@@ -9,6 +9,7 @@ library(viridisLite)
 library(vegan)
 library(ggpubr)
 library(ggrepel)
+library(fs)
 
 
 # 1. Load the data --------------------------------------------------------
@@ -36,6 +37,9 @@ fatty_acid_ppcp_meta_dist <- inner_join(x = fatty_acid, y = ppcp_meta_dist,
                                         by = c("site")) %>%
   unite(taxon, c("Genus", "Species"), remove = FALSE)
 
+# 1.5 Create folder for tables --------------------------------------------
+
+dir_create("../tables")
 
 # 2. Overall Fatty Acid Analysis ------------------------------------------
 

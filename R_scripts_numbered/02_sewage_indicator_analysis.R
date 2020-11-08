@@ -11,6 +11,7 @@ library(tidyverse)
 library(viridis)
 library(viridisLite)
 library(ggpubr)
+library(fs)
 
 
 # 2. Load data ------------------------------------------------------------
@@ -46,6 +47,9 @@ distance <- read.csv(file = "../cleaned_data/distance_weighted_population_metric
 # Join site metadata with distance data
 metadata_dist <- full_join(x = metadata, y = distance, by = "site")
 
+# 2.5 Create folder for plots ---------------------------------------------
+
+dir_create("../figures")
 
 # 3. PPCP analysis --------------------------------------------------------
 
