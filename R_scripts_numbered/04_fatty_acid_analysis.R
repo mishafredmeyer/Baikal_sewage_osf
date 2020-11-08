@@ -56,15 +56,18 @@ fatty_acid_whole_wide <- fatty_acid %>%
 
 # Identify mean, variance, and coefficient of variation across all
 # sites for each taxonomic grouping
-mean <- as.vector(sapply(fatty_acid_whole_wide[, 5:63], mean))
-var <- as.vector(sapply(fatty_acid_whole_wide[, 5:63], var))
-mean_var <- data.frame(cbind(Mean = mean[1:59], Variance = var[1:59]))
-mean_var <- dplyr::mutate(mean_var, Var_Mean_Ratio = Variance / Mean)
-row.names(mean_var) <- colnames(fatty_acid_whole_wide[, 5:63])
-mean_var[order(mean_var$Var_Mean_Ratio, decreasing = TRUE), ]
+mean_var <- fatty_acid_whole_wide %>%
+  pivot_longer(cols = a_15_0:i_17_0, names_to = "fa") %>%
+  group_by(fa) %>%
+  summarize(
+    Mean = mean(value),
+    Variance = var(value)
+  ) %>%
+  mutate(Var_Mean_Ratio = Variance / Mean) %>%
+  column_to_rownames(var = "fa") %>%
+  arrange(desc(Var_Mean_Ratio))
 
-write.csv(x = mean_var[order(mean_var$Var_Mean_Ratio, decreasing = TRUE), ], 
-          file = "../tables/cv_all_fa.csv", row.names = TRUE)
+write.csv(x = mean_var, file = "../tables/cv_all_fa.csv", row.names = TRUE)
 
 # Perform NMDS
 whole_fatty_acid_metaMDS <- metaMDS(comm = fatty_acid_whole_wide[, 5:63],
@@ -128,12 +131,16 @@ fatty_acid_essential_wide <- fatty_acid %>%
 
 # Identify mean, variance, and coefficient of variation across all
 # sites for each taxonomic grouping
-mean <- as.vector(sapply(fatty_acid_essential_wide[, 5:12], mean))
-var <- as.vector(sapply(fatty_acid_essential_wide[, 5:12], var))
-mean_var <- data.frame(cbind(Mean = mean[1:8], Variance = var[1:8]))
-mean_var <- dplyr::mutate(mean_var, Var_Mean_Ratio = Variance / Mean)
-row.names(mean_var) <- colnames(fatty_acid_essential_wide[, 5:12])
-mean_var[order(mean_var$Var_Mean_Ratio, decreasing = TRUE), ]
+mean_var <- fatty_acid_essential_wide %>%
+  pivot_longer(cols = c18_2w6:c22_6w3, names_to = "fa") %>%
+  group_by(fa) %>%
+  summarize(
+    Mean = mean(value),
+    Variance = var(value)
+  ) %>%
+  mutate(Var_Mean_Ratio = Variance / Mean) %>%
+  column_to_rownames(var = "fa") %>%
+  arrange(desc(Var_Mean_Ratio))
 
 write.csv(x = mean_var[order(mean_var$Var_Mean_Ratio, decreasing = TRUE), ], 
           file = "../tables/cv_efa.csv", row.names = TRUE)

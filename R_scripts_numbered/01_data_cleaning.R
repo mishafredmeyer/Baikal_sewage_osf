@@ -37,10 +37,7 @@ nutrients_orig <- read.csv(file = "../clean_disaggregated_data/nutrients.csv",
 # Take nutrients averages by site
 nutrients <- nutrients_orig %>%
   group_by(site) %>%
-  summarize(mean_nh4_mg_dm3 = mean(nh4_mg_dm3),
-            mean_no3_mg_dm3 = mean(no3_mg_dm3),
-            mean_tp_mg_dm3 = mean(tp_mg_dm3),
-            mean_tpo43_mg_dm3 = mean(tpo43_mg_dm3)) 
+  summarize(across(-replicate, mean, .names = "mean_{.col}"))
 
 head(nutrients)
 
@@ -86,12 +83,10 @@ write.csv(x = metadata, file = "../cleaned_data/metadata.csv",
 inverts_orig <- read.csv(file = "../clean_disaggregated_data/invertebrates.csv",
                          header = TRUE)
 
-# Take mean counts by taxon, flesh out taxonomic info, spread to wide format
+# Take mean counts by taxon
 inverts_wide <- inverts_orig %>%
-  gather(key = taxon, value = sum_count, Acroloxidae:Valvatidae) %>%  
-  group_by(site, taxon) %>%
-  summarize(mean_count = mean(sum_count)) %>%
-  spread(key = taxon, value = mean_count)
+  group_by(site) %>%
+  summarize(across(-replicate, mean))
 
 head(inverts_wide)
 
@@ -108,11 +103,9 @@ periphyton_orig <- read.csv(file = "../clean_disaggregated_data/periphyton.csv",
 periphyton_summarized <- periphyton_orig %>%
   select(-contains("filament")) %>%
   filter(!is.na(diatom)) %>%
-  gather(key = taxon, value = count, diatom:desmidales) %>% 
-  group_by(site, taxon) %>%
-  summarize(mean_count = mean(count)) %>% 
-  ungroup() %>%
-  spread(key = taxon, value = mean_count) 
+  group_by(site) %>%
+  summarize(across(-one_of(c("replicate", "comments", "subsamples_counted")), mean)) %>%
+  select(site, desmidales, diatom, pediastrum, spirogyra, tetrasporales, ulothrix)
 
 head(periphyton_summarized)
 
