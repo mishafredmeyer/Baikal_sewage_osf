@@ -13,6 +13,16 @@ library(viridisLite)
 library(ggpubr)
 library(fs)
 
+# Check if figures directory exists 
+# If not, create the figures directory
+sub_dir <- "figures"
+output_dir <- file.path(here::here(), sub_dir)
+
+if (!dir.exists(output_dir)){
+  dir.create(output_dir)
+} else {
+  print("Dir 'figures' already exists!")
+}
 
 # 2. Load data ------------------------------------------------------------
 
@@ -46,10 +56,6 @@ distance <- read.csv(file = "../cleaned_data/distance_weighted_population_metric
 
 # Join site metadata with distance data
 metadata_dist <- full_join(x = metadata, y = distance, by = "site")
-
-# 2.5 Create folder for plots ---------------------------------------------
-
-dir_create("../figures")
 
 # 3. PPCP analysis --------------------------------------------------------
 

@@ -19,6 +19,17 @@ library(pvclust)
 # Pull in function for plotting correlations
 source("panel_cor_function.R")
 
+# Check if figures directory exists 
+# If not, create the figures directory
+sub_dir <- "figures"
+output_dir <- file.path(here::here(), sub_dir)
+
+if (!dir.exists(output_dir)){
+  dir.create(output_dir)
+} else {
+  print("Dir 'figures' already exists!")
+}
+
 # 2. Load the data --------------------------------------------------------
 
 # Invertebrate data
@@ -60,7 +71,6 @@ mod <- c("BK-2", "BK-3", "SM-1")
 high <- c("BK-1", "EM-1", "LI-3", "LI-2", "LI-1")
 
 # Small Function to add some plot labels at the end
-
 add_label <- function(xfrac, yfrac, label, pos = 4, ...) {
   u <- par("usr")
   x <- u[1] + xfrac * (u[2] - u[1])
@@ -85,15 +95,15 @@ periphyton_meta_dist_long <- periphyton_meta_dist %>%
   mutate(total_count = sum(count))
 
 # Rework Site column as a factor
-periphyton_meta_dist_long$Site <- factor(x = periphyton_meta_dist_long$site,
-                                         levels = c("BGO-2",  "BGO-3", "KD-1",
-                                                    "KD-2", "BGO-1", "MS-1",
-                                                    "BK-3", "BK-2", "SM-1",
-                                                    "BK-1", "EM-1", "LI-1",
-                                                    "LI-2", "LI-3"))
-
 # Remove data with Site = NA
-periphyton_long_clean <- periphyton_meta_dist_long %>% filter(!is.na(site))
+periphyton_long_clean <- periphyton_meta_dist_long %>% 
+  filter(!is.na(site)) %>%
+  mutate(site = factor(x = site,
+                       levels = c("BGO-2",  "BGO-3", "KD-1",
+                                  "KD-2", "BGO-1", "MS-1",
+                                  "BK-3", "BK-2", "SM-1",
+                                  "BK-1", "EM-1", "LI-1",
+                                  "LI-2", "LI-3")))
 
 # Plot periphyton counts as a function of site and taxa
 periphyton_meta_dist_plot <- ggplot(data = periphyton_long_clean) +
@@ -151,7 +161,8 @@ data_scores$site <- periphyton_meta_dist_wide %>%
   pull(site)
 
 # Join scores with PPCP data and code into PI groups
-data_scores <- inner_join(x = data_scores, y = ppcp_meta_dist, by = "site") %>%
+data_scores <- inner_join(x = data_scores, y = ppcp_meta_dist, 
+                          by = "site") %>%
   mutate(IDW_pop_group = ifelse(test = site %in% high,
                                 yes = "High", no = "NULL"),
          IDW_pop_group = ifelse(test = (site %in% c(low,mod)), 
@@ -168,15 +179,25 @@ species_scores$species <- rownames(species_scores)
 # Plot the NMDS
 periphyton_IDW_pop_group_plot <- ggplot() +
   geom_point(data = data_scores,
-             aes(x = NMDS1, y = NMDS2, size = log10(distance_weighted_population),
+             aes(x = NMDS1, y = NMDS2, 
+                 size = log10(distance_weighted_population),
                  color = IDW_pop_group)) +
   scale_size_continuous(range = c(12, 28), guide = FALSE) +
   scale_color_manual(values = inferno(15)[c(3, 8, 11)],
                      name = "IDW Population Grouping") +
   geom_text_repel(data = species_scores %>% 
-                    filter(species %in% c("spirogyra", "ulothrix", "diatom")), 
+                    filter(species %in% c("spirogyra", "ulothrix", "diatom")) %>%
+                    mutate(species = ifelse(species == "spirogyra", 
+                                            yes = "Spirogyra",
+                                            no = species),
+                           species = ifelse(species == "ulothrix", 
+                                            yes = "Ulothrix",
+                                            no = species),
+                           species = ifelse(species %in% c("Ulothrix", "Spirogyra"), 
+                                            yes = paste0("italic(", species, ")"),
+                                            no = species)), 
                   aes(x = NMDS1, y = NMDS2, label = species), 
-            size = 10) + 
+            size = 9, parse = TRUE) + 
   guides(colour = guide_legend(override.aes = list(size = 10))) +
   annotate("label", x = 0, y = -0.35, size = 10,
            label = paste("Stress: ", round(periphyton_nmds$stress, digits = 3))) +
@@ -431,6 +452,10 @@ invertebrates_well_preserved_wide <- invertebrate_meta_dist %>%
 inver_comm <- sqrt(invertebrates_well_preserved_wide[, 3:14])
 
 # Vizualize optimum cluster number for invert community
+# Sometimes this can produce an error that reads:
+# Error in .Call.graphics(C_palette2, .Call(C_palette2, NULL)) : 
+# invalid graphics state.
+# This can be fixed by running the command: dev.off()
 invert_cluster_wss <- fviz_nbclust(x = as.matrix(vegdist(x = inver_comm, method = "bray",
                                                          diag = TRUE, upper = TRUE)),
                                    FUNcluster = cluster::pam, method = "wss")
@@ -496,17 +521,20 @@ inverts_well_preserved_nmds <- ggplot() +
                                           "Caddisflies", "Brandtia", "Planorbidae", "Baicaliidae",
                                           "Cryptoropus", "Flatworms")) %>%
                     mutate(NMDS1 = ifelse(test = species == "Poekilogammarus", 
-                                                 yes = NMDS1+0.04, no = NMDS1),
+                                                 yes = NMDS1+0.0285, no = NMDS1),
                            NMDS2 = ifelse(test = species == "Poekilogammarus", 
                                           yes = NMDS2+0.02, no = NMDS2),
                            NMDS1 = ifelse(test = species == "Eulimnogammarus", 
                                                  yes = NMDS1-0.08, no = NMDS1),
                            NMDS1 = ifelse(test = species == "Eulimnogammarus", 
-                                          yes = NMDS1-0.04, no = NMDS1),
+                                          yes = NMDS1-0.06, no = NMDS1),
                            NMDS2 = ifelse(test = species == "Flatworms", 
-                                          yes = NMDS2-0.07, no = NMDS2),),
+                                          yes = NMDS2-0.07, no = NMDS2),
+                           species = ifelse(test = species %in% amphipods, 
+                                            yes = paste0("italic(", species, ")"),
+                                            no = species)),
                   aes(x = NMDS1, y = NMDS2, label = species), 
-                  size = 10) + 
+                  size = 8, parse = TRUE) + 
   coord_equal() +
   annotate("label", x = -0.15, y = 0.4, size = 10,
            label = paste("Stress: ",

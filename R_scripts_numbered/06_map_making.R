@@ -9,6 +9,17 @@ library(cowplot)
 library(ggrepel)
 library(viridis)
 
+# Check if figures directory exists 
+# If not, create the figures directory
+sub_dir <- "figures"
+output_dir <- file.path(here::here(), sub_dir)
+
+if (!dir.exists(output_dir)){
+  dir.create(output_dir)
+} else {
+  print("Dir 'figures' already exists!")
+}
+
 
 # Step 1: Import data and join datasets -----------------------------------
 

@@ -8,6 +8,14 @@ library(tidyverse)
 library(lubridate)
 library(stringr)
 
+sub_dir <- "cleaned_data"
+output_dir <- file.path(here::here(), sub_dir)
+
+if (!dir.exists(output_dir)){
+  dir.create(output_dir)
+} else {
+  print("Dir 'cleaned_data' already exists!")
+}
 
 # 2. Load and clean PPCP data ---------------------------------------------
 
@@ -37,7 +45,7 @@ nutrients_orig <- read.csv(file = "../clean_disaggregated_data/nutrients.csv",
 # Take nutrients averages by site
 nutrients <- nutrients_orig %>%
   group_by(site) %>%
-  summarize(across(-replicate, mean, .names = "mean_{.col}"))
+  summarize(across(-replicate, mean, .names = "mean_{col}"))
 
 head(nutrients)
 

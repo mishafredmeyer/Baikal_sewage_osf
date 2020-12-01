@@ -9,8 +9,19 @@ library(viridisLite)
 library(vegan)
 library(ggpubr)
 library(ggrepel)
+library(ggtext)
 library(fs)
 
+# Check if figures directory exists 
+# If not, create the figures directory
+sub_dir <- "figures"
+output_dir <- file.path(here::here(), sub_dir)
+
+if (!dir.exists(output_dir)){
+  dir.create(output_dir)
+} else {
+  print("Dir 'figures' already exists!")
+}
 
 # 1. Load the data --------------------------------------------------------
 
@@ -39,7 +50,14 @@ fatty_acid_ppcp_meta_dist <- inner_join(x = fatty_acid, y = ppcp_meta_dist,
 
 # 1.5 Create folder for tables --------------------------------------------
 
-dir_create("../tables")
+sub_dir <- "tables"
+output_dir <- file.path(here::here(), sub_dir)
+
+if (!dir.exists(output_dir)){
+  dir.create(output_dir)
+} else {
+  print("Dir 'tables' already exists!")
+}
 
 # 2. Overall Fatty Acid Analysis ------------------------------------------
 
@@ -57,6 +75,10 @@ fatty_acid_whole_wide <- fatty_acid %>%
   select(-concentration, - total_fatty_acid) %>%
   spread(key = fatty_acid, value = prop_fatty_acid) %>%
   unite(taxon, c("Genus", "Species"), sep = "_", remove = FALSE)
+
+# Define amphipod taxa in a vector to italicize
+amphipods <- c("Eulimnogammarus verrucosus", "Eulimnogammarus vittatus",
+               "Pallasea cancellus", "Eulimnogammarus cyaneus")
 
 # Identify mean, variance, and coefficient of variation across all
 # sites for each taxonomic grouping
@@ -84,7 +106,8 @@ data_scores <- as.data.frame(scores(whole_fatty_acid_metaMDS)) %>%
          taxon = fatty_acid_whole_wide$taxon,
          taxon = gsub(pattern = "_", replacement = " ", x = taxon),
          taxon = gsub(pattern = "NA", replacement = "", x = taxon),
-         taxon = gsub(pattern = "Drapa", replacement = "Drapa spp.", x = taxon))
+         taxon = gsub(pattern = "Draparnaldia", replacement = "Draparnaldia spp.", x = taxon),
+         taxon = trimws(taxon))
 
 # Pull species scores from NMDS
 species_scores <- as.data.frame(scores(x = whole_fatty_acid_metaMDS, display = "species"))
@@ -93,15 +116,28 @@ species_scores$species <- rownames(species_scores)
 # Create plot
 # This figure is associated with figure S1 in the associated manuscript
 nmds <- ggplot() +
-  geom_point(data = data_scores, aes(x = NMDS1, y = NMDS2, shape = taxon),
-             size = 10, alpha = .75) +
-  #scale_color_manual(values = viridis(69)[c(1, 13, 25, 33, 38, 50, 60, 69)]) +
-  scale_shape_manual(values = c(1:7)) + 
+  geom_point(data = data_scores %>%
+             mutate(taxon = ifelse(taxon %in% c(amphipods, "Draparnaldia spp."),
+                              yes = paste0("*", taxon, "*"),
+                              no = taxon)), 
+             mapping = aes(x = NMDS1, y = NMDS2, fill = taxon),
+             size = 10, alpha = .6, shape = 21, stroke = 2, color = "grey60") +
+  scale_fill_viridis_d(option = "plasma") +
   geom_text_repel(data = species_scores %>%
                     filter(species %in% c("c18_3w3", "c18_1w9", "c18_2w6", "c16_0", 
-                           "c14_0", "c20_5w3", "c161w7")), 
+                                          "c14_0", "c20_5w3", "c16_1w7")) %>%
+                    mutate(NMDS2 = ifelse(test = species == "c14_0", yes = NMDS2+0.04, 
+                                          no = NMDS2),
+                           NMDS2 = ifelse(test = species == "c16_1w7", yes = NMDS2-0.02, 
+                                          no = NMDS2),
+                           species = gsub(pattern = "c", replacement = "", 
+                                          x = species),
+                           species = gsub(pattern = "_", replacement = ":", 
+                                          x = species),
+                           species = gsub(pattern = "w", replacement = "\U03C9", 
+                                          x = species)), 
                   aes(x = NMDS1, y = NMDS2, label = species),
-                  size = 5) +
+                  size = 10) +
   ggtitle("NMDS with Entire FA Spectrum") +
   annotate("label", x = 0.4, y = 0.45,
            label = paste("Stress: ", round(whole_fatty_acid_metaMDS$stress, digits = 3)),
@@ -111,10 +147,10 @@ nmds <- ggplot() +
         title = element_text(size = 20),
         axis.text = element_text(size = 16),
         axis.title = element_text(size = 18),
-        legend.text = element_text(size = 12))
+        legend.text = element_markdown(size = 12))
 nmds
 
-ggsave(filename = "all_species_all_FA_symbols.png", plot = nmds, device = "png",
+ggsave(filename = "all_species_all_FA.png", plot = nmds, device = "png",
        path = "../figures/", width = 12, height = 10, units = "in", dpi = 300)
 
 
@@ -161,7 +197,8 @@ data_scores <- as.data.frame(scores(essential_fatty_acid_metaMDS)) %>%
          taxon = fatty_acid_essential_wide$taxon,
          taxon = gsub(pattern = "_", replacement = " ", x = taxon),
          taxon = gsub(pattern = "NA", replacement = "", x = taxon),
-         taxon = gsub(pattern = "Drapa", replacement = "Drapa spp.", x = taxon))
+         taxon = gsub(pattern = "Draparnaldia", replacement = "Draparnaldia spp.", x = taxon),
+         taxon = trimws(taxon))
 
 # Pull species scores from NMDS
 species_scores <- as.data.frame(scores(x = essential_fatty_acid_metaMDS, display = "species"))
@@ -170,14 +207,23 @@ species_scores$species <- rownames(species_scores)
 # Plot NMDS for all species but only Essential Fatty Acids
 # This plot is figure S2 in the associated ms.
 nmds <- ggplot() +
-  geom_point(data = data_scores, aes(x = NMDS1, y = NMDS2, shape = taxon),
-             size = 10, alpha = .75) +
-  #scale_fill_manual(values = inferno(69)[c(1, 13, 18, 20, 27, 33, 38, 45, 55)]) +
-  scale_shape_manual(values = c(1:7)) + 
+  geom_point(data = data_scores %>%
+               mutate(taxon = ifelse(taxon %in% c(amphipods, "Draparnaldia spp."),
+                                     yes = paste0("*", taxon, "*"),
+                                     no = taxon)), 
+             mapping = aes(x = NMDS1, y = NMDS2, fill = taxon),
+             size = 10, alpha = .75, shape = 21, stroke = 2, color = "grey70") +
+  scale_fill_viridis_d(option = "plasma") +
   geom_text_repel(data = species_scores %>%
-                    filter(species %in% c("c18_3w3", "c18_2w6", "c20_5w3")), 
+                    filter(species %in% c("c18_3w3", "c18_2w6", "c20_5w3")) %>%
+                    mutate(species = gsub(pattern = "c", replacement = "", 
+                                          x = species),
+                           species = gsub(pattern = "_", replacement = ":", 
+                                          x = species),
+                           species = gsub(pattern = "w", replacement = "\U03C9", 
+                                          x = species)), 
                   aes(x = NMDS1, y = NMDS2, label = species),
-                  size = 5) +
+                  size = 10) +
   ggtitle("NMDS with Essential FA Spectrum") +
   annotate("label", x = -0.5, y = 0.35,
            label = paste("Stress: ",
@@ -188,10 +234,10 @@ nmds <- ggplot() +
         title = element_text(size = 20),
         axis.text = element_text(size = 16),
         axis.title = element_text(size = 18),
-        legend.text = element_text(size = 12))
+        legend.text = element_markdown(size = 12))
 nmds
 
-ggsave(filename = "all_species_essential_FA_symbol.png", plot = nmds, device = "png",
+ggsave(filename = "all_species_essential_FA.png", plot = nmds, device = "png",
        path = "../figures/", width = 12, height = 10, units = "in",
        dpi = 300)
 
@@ -241,12 +287,12 @@ p_values <- c(summary(peri_ppcp_lm)$coefficients[2,4],
               summary(eulimnogammarus_verrucosus_ppcp_lm)$coefficients[2,4],
               summary(eulimnogammarus_vitatus_ppcp_lm)$coefficients[2,4])
 
-taxon <- c("Periphyton", "Eulimnogammarus verrucosus", "Eulimnogammarus vittatus")
+taxon <- c("Periphyton", "*Eulimnogammarus verrucosus*", "*Eulimnogammarus vittatus*")
 
 labels <- data.frame(taxon, p_values, r_squared) %>%
   mutate(label = paste0("p-value: ",
                         round(p_values, 3),
-                        "\nR-squared: ",
+                        "<br>R<sup>2</sup>: ",
                         round(r_squared, 3)))
 
 # This figure is Figure 7 within the body of the associated manuscript.
@@ -255,9 +301,9 @@ ppcp_filamentous_diatom_fa_plot <- fatty_acid_prop_ppcp_meta_dist %>%
     filter(taxon %in% c("Eulimnogammarus_verrucosus", "Eulimnogammarus_vittatus",
                         "Periphyton_NA")) %>%
     mutate(taxon = ifelse(test = taxon == "Eulimnogammarus_verrucosus",
-                          yes = "Eulimnogammarus verrucosus", no = taxon),
+                          yes = "*Eulimnogammarus verrucosus*", no = taxon),
            taxon = ifelse(test = taxon == "Eulimnogammarus_vittatus",
-                          yes = "Eulimnogammarus vittatus", no = taxon),
+                          yes = "*Eulimnogammarus vittatus*", no = taxon),
            taxon = ifelse(test = taxon == "Periphyton_NA",
                           yes = "Periphyton", no = taxon)) %>%
     ggplot(aes(x = log10(ppcp_sum), 
@@ -265,15 +311,20 @@ ppcp_filamentous_diatom_fa_plot <- fatty_acid_prop_ppcp_meta_dist %>%
     geom_point(size = 3) +
     facet_wrap(~ taxon) +
     geom_smooth(method = "lm") +
-    geom_label(data = labels %>% filter(taxon != "Periphyton"), aes(label = label, x = -2.0, y = 1.75), size = 4) +
-    geom_label(data = labels %>% filter(taxon == "Periphyton"), aes(label = label, x = -2.0, y = 1.15), size = 4) +
+    geom_richtext(data = labels %>% filter(taxon != "Periphyton"), 
+               mapping = aes(label = label, 
+                             x = -2.0, y = 1.75), size = 7) +
+    geom_richtext(data = labels %>% filter(taxon == "Periphyton"), 
+                  mapping = aes(label = label, 
+                                x = -2.0, y = 1.15), size = 7) +
     xlab(label = "log10([Total PPCP])") +
     ylab(label = expression(frac(18:3~omega~3 + 18:1~omega~9 + 18:2~omega~6 + 16:0, 
                                  16:1~omega~7 + 20:5~omega~3 + 16:0 + 14:0))) +
     theme_bw() +
-    theme(text = element_text(size = 20))
+    theme(text = element_text(size = 20),
+          strip.text = element_markdown())
 
-ggsave(filename = "ppcp_filamentous_diatom_fa_plot.png", plot = ppcp_filamentous_diatom_fa_plot, device = "png",
+ggsave(filename = "ppcp_filamentous_diatom_fa_plot.png", plot =  ppcp_filamentous_diatom_fa_plot, device = "png",
        path = "../figures/", width = 12, height = 6, units = "in")
 
 # 3.2 Second do filamentous:diatom EFAs -----------------------------------
@@ -314,12 +365,12 @@ p_values <- c(summary(peri_ppcp_lm)$coefficients[2,4],
               summary(eulimnogammarus_verrucosus_ppcp_lm)$coefficients[2,4],
               summary(eulimnogammarus_vitatus_ppcp_lm)$coefficients[2,4])
 
-taxon <- c("Periphyton", "Eulimnogammarus verrucosus", "Eulimnogammarus vittatus")
+taxon <- c("Periphyton", "*Eulimnogammarus verrucosus*", "*Eulimnogammarus vittatus*")
 
 labels <- data.frame(taxon, p_values, r_squared) %>%
   mutate(label = paste0("p-value: ",
                         round(p_values, 3),
-                        "\nR-squared: ",
+                        "<br>R<sup>2</sup>: ",
                         round(r_squared, 3)))
 
 # This figure is Figure 7 within the body of the associated manuscript.
@@ -327,21 +378,24 @@ ppcp_efa_plot <- fatty_acid_prop_ppcp_meta_dist %>%
   filter(taxon %in% c("Eulimnogammarus_verrucosus", "Eulimnogammarus_vittatus",
                       "Periphyton_NA")) %>%
   mutate(taxon = ifelse(test = taxon == "Eulimnogammarus_verrucosus",
-                        yes = "Eulimnogammarus verrucosus", no = taxon),
+                        yes = "*Eulimnogammarus verrucosus*", no = taxon),
          taxon = ifelse(test = taxon == "Eulimnogammarus_vittatus",
-                        yes = "Eulimnogammarus vittatus", no = taxon),
+                        yes = "*Eulimnogammarus vittatus*", no = taxon),
          taxon = ifelse(test = taxon == "Periphyton_NA",
                         yes = "Periphyton", no = taxon)) %>%
   ggplot(aes(x = log10(ppcp_sum), y = ((c18_3w3 + c18_2w6) / (c20_5w3)))) +
   geom_point(size = 3) +
   facet_wrap(~ taxon) +
   geom_smooth(method = "lm") +
-  geom_label(data = labels %>% filter(taxon != "Periphyton"), aes(label = label, x = -2.0, y = 5), size = 4) +
-  geom_label(data = labels %>% filter(taxon == "Periphyton"), aes(label = label, x = -2.0, y = 2.5), size = 4) +
+  geom_richtext(data = labels %>% filter(taxon != "Periphyton"), 
+                mapping = aes(label = label, x = -2.0, y = 5), size = 7) +
+  geom_richtext(data = labels %>% filter(taxon == "Periphyton"), 
+             mapping = aes(label = label, x = -2.0, y = 2.5), size = 7) +
   xlab(label = "log10([Total PPCP])") +
   ylab(label = expression(frac(18:3~omega~3 + 18:2~omega~6, 20:5~omega~3 ))) +
   theme_bw() +
-  theme(text = element_text(size = 20))
+  theme(text = element_text(size = 20),
+        strip.text = element_markdown())
 
 ggsave(filename = "ppcp_efa_plot.png", plot = ppcp_efa_plot, device = "png",
        path = "../figures/", width = 12, height = 6, units = "in")
@@ -371,7 +425,7 @@ mufa <- c("c14_1n5", "c15_1w7", "c17_1n7",
 scufa <- c("c16_2w4", "c16_2w6", "c16_2w7", "c16_3w3", "c16_3w4", "c16_3w6", "c16_4w1", "c16_4w3", 
            "c18_2w6", "c18_2w6t", "c18_3w3", "c18_3w6", "c18_4w3", "c18_4w4", "c18_5w3")
 
-lcufa <- c("c20_2_5_11", "c20_2_5_13", "c20_2w6", "c20_3w3", "c20_3w6", "c20_4w3", "c20_4w6", "c20_5w3",
+lcufa <- c("c20_2w5_11", "c20_2w5_13", "c20_2w6", "c20_3w3", "c20_3w6", "c20_4w3", "c20_4w6", "c20_5w3",
            "c22_2w6", "c22_3w3", "c22_4w3", "c22_4w6", "c22_5w3", "c22_5w6", "c22_6w3")
 
 complete_fatty_acid_repo <- data.frame(rbind(c("SAFA", paste(safa, collapse = ", ")),
@@ -423,8 +477,10 @@ fatty_acid_type_props_plot <- fatty_acid_prop_ppcp_meta_dist %>%
          fatty_acid_type = ifelse(fatty_acid %in% lcufa, "LCPUFA", fatty_acid_type)) %>%
   mutate(taxon = gsub(pattern = "_", replacement = " ", x = taxon),
          taxon = gsub(pattern = "NA", replacement = "", x = taxon),
-         taxon = ifelse(test = grepl(pattern = "Drapa", x = taxon),
-                        yes = "Drapa spp.", no = taxon)) %>%
+         taxon = ifelse(test = grepl(pattern = "Draparnaldia", x = taxon),
+                        yes = "Draparnaldia spp.", no = taxon),
+         taxon = ifelse(test = !taxon %in% c("Periphyton ", "Snail "),
+                        yes = paste0("*", taxon, "*"), no = taxon)) %>%
   select(site, ppcp_sum, distance_weighted_population, taxon, 
          Genus, Species, fatty_acid_type, fa_prop) %>%
   group_by(site, ppcp_sum, distance_weighted_population, taxon,
@@ -438,12 +494,13 @@ fatty_acid_type_props_plot <- fatty_acid_prop_ppcp_meta_dist %>%
   scale_color_viridis_d(option = "viridis") +
   facet_grid(~fatty_acid_type) +
   ylab("Total proportion") +
+  xlab("log10([Total PPCP])") +
   theme_bw() +
   theme(legend.position = "bottom",
         title = element_text(size = 20),
         axis.text = element_text(size = 16),
         axis.title = element_text(size = 20),
-        legend.text = element_text(size = 20),
+        legend.text = element_markdown(size = 20),
         strip.text = element_text(size = 16))
 
 ggsave(filename = "fatty_acid_type_props_plot.png", plot = fatty_acid_type_props_plot, device = "png",
@@ -456,7 +513,7 @@ ggsave(filename = "fatty_acid_type_props_plot.png", plot = fatty_acid_type_props
 # 5.1 Primary producer analysis -------------------------------------------
 
 periphyton_fatty_acids <- fatty_acid_prop_ppcp_meta_dist %>%
-  filter(Genus %in% c("Periphyton", "Drapa")) %>%
+  filter(Genus %in% c("Periphyton", "Draparnaldia")) %>%
   select(site:distance_weighted_population, c18_3w3, c16_0, c18_1w9, c18_2w6, 
          c16_1w7, c20_5w3, c14_0)
 
@@ -468,22 +525,29 @@ data_scores <- as.data.frame(scores(peri_nmds)) %>%
          taxon = periphyton_fatty_acids$taxon,
          taxon = gsub(pattern = "_", replacement = " ", x = taxon),
          taxon = gsub(pattern = "NA", replacement = "", x = taxon),
-         taxon = gsub(pattern = "Drapa", replacement = "Drapa spp.", x = taxon),
+         taxon = gsub(pattern = "Draparnaldia", replacement = "*Draparnaldia spp.*", x = taxon),
          ppcp_sum = periphyton_fatty_acids$ppcp_sum)
 
 species_scores <- as.data.frame(scores(peri_nmds, display = "species"))
+species_scores$species <- rownames(species_scores)
 
 # Create plot
 # This figure is associated with figure S1 in the associated manuscript
 nmds <- ggplot() +
-  geom_point(data = data_scores, aes(x = NMDS1, y = 0.5, shape = taxon,
-                                     size = ppcp_sum),
-             alpha = .5) +
-  #geom_point(data = species_scores, aes(x = NMDS1, y = 1), size = 4) +
-  geom_text_repel(data = species_scores, aes(x = NMDS1, y = 1,
-                                             label = rownames(species_scores)),
+  geom_point(data = data_scores, aes(x = NMDS1, y = 0.5,
+                                     size = ppcp_sum, fill = taxon),
+             alpha = .5, shape = 21, stroke = 5, color = "grey70") +
+  scale_fill_manual(values = viridis(20)[c(4, 10)]) +
+  geom_text_repel(data = species_scores %>%
+                    mutate(species = gsub(pattern = "c", replacement = "", 
+                                          x = species),
+                           species = gsub(pattern = "_", replacement = ":", 
+                                          x = species),
+                           species = gsub(pattern = "w", replacement = "\U03C9", 
+                                          x = species)), 
+                  aes(x = NMDS1, y = 1, label = species),
                   size = 10, segment.size = NA) +
-  scale_size_continuous(name = "[Total PPCP]", range = c(5,20)) +
+  scale_size_continuous(name = "[Total PPCP]", range = c(10, 30)) +
   guides(shape = guide_legend(override.aes = list(size=10))) + 
   ggtitle("NMDS with Filamentous:Diatom Fatty Acids") +
   ylab("") + 
@@ -492,22 +556,24 @@ nmds <- ggplot() +
            label = paste("Stress: ", round(peri_nmds$stress, digits = 3)),
            size = 10) +
   theme_minimal() +
+  guides(fill = guide_legend(override.aes = list(size = 15))) +
   theme(legend.position = "right",
         title = element_text(size = 20),
         axis.text = element_text(size = 20),
         axis.title = element_text(size = 20),
-        legend.text = element_text(size = 20),
+        legend.text = element_markdown(size = 20),
         axis.text.y = element_blank(),
         panel.grid.major.y = element_blank(),
-        panel.grid.minor.y = element_blank())
+        panel.grid.minor.y = element_blank(),
+        legend.key.height = unit(0.75, "in"))
 
-ggsave(filename = "filamentous_diatom_nmds_peri_drapa.png", plot = nmds, device = "png", 
+ggsave(filename = "filamentous_diatom_nmds_peri_draparnaldia.png", plot = nmds, device = "png", 
        path = "../figures/", width = 16, height = 8, units = "in")
 
 # 5.2 Macroinvertebrate analysis ------------------------------------------
 
 invert_fatty_acids <- fatty_acid_prop_ppcp_meta_dist %>%
-  filter(!(Genus %in% c("Drapa", "Periphyton", "Snail", "Hyalella"))) %>%
+  filter(!(Genus %in% c("Draparnaldia", "Periphyton", "Snail", "Hyalella"))) %>%
   select(site:distance_weighted_population, c18_3w3, c16_0, c18_1w9, c18_2w6,  
          c16_1w7, c20_5w3, c14_0)
 
@@ -519,36 +585,42 @@ data_scores <- as.data.frame(scores(invert_nmds)) %>%
          taxon = invert_fatty_acids$taxon,
          taxon = gsub(pattern = "_", replacement = " ", x = taxon),
          taxon = gsub(pattern = "NA", replacement = "", x = taxon),
-         taxon = gsub(pattern = "Drapa", replacement = "Drapa spp.", x = taxon),
+         taxon = paste0("*", taxon, "*"),
          ppcp_sum = invert_fatty_acids$ppcp_sum)
 
 species_scores <- as.data.frame(scores(invert_nmds, display = "species"))
+species_scores$species <- rownames(species_scores)
 
 # Create plot
 # This figure is associated with figure S1 in the associated manuscript
 nmds <- ggplot() +
-  geom_point(data = data_scores, aes(x = NMDS1, y = NMDS2, shape = taxon,
+  geom_point(data = data_scores, aes(x = NMDS1, y = NMDS2, fill = taxon,
                                      size = ppcp_sum),
-             alpha = .5) +
-  scale_shape_manual(name = "taxon", values = c(15:18)) +
-  #geom_point(data = species_scores, aes(x = NMDS1, y = NMDS2)) +
+             alpha = .5, shape = 21, stroke = 5, color = "grey70") +
+  scale_fill_manual(name = "taxon", values = viridis(30)[c(4, 9, 17, 24)]) +
   geom_text_repel(data = species_scores %>%
-                    mutate(NMDS1 = ifelse(test = rownames(species_scores) == "c18_2w6",
-                                          yes = NMDS1-0.04, no = NMDS1)), 
-                  aes(x = NMDS1, y = NMDS2, label = rownames(species_scores)),
+                    mutate(species = gsub(pattern = "c", replacement = "", 
+                                          x = species),
+                           species = gsub(pattern = "_", replacement = ":", 
+                                          x = species),
+                           species = gsub(pattern = "w", replacement = "\U03C9", 
+                                          x = species)), 
+                  aes(x = NMDS1, y = NMDS2, label = species),
                   size = 10, segment.size = NA) +
-  scale_size_continuous(name = "[Total PPCP]", range = c(5,20)) +
+  scale_size_continuous(name = "[Total PPCP]", range = c(10,30)) +
   guides(shape = guide_legend(override.aes = list(size=10))) + 
   ggtitle("NMDS with Filamentous:Diatom Fatty Acids") +
   annotate("label", x = 0.2, y = 0.2,
            label = paste("Stress: ", round(invert_nmds$stress, digits = 3)),
            size = 10) +
   theme_minimal() +
+  guides(fill = guide_legend(override.aes = list(size = 10))) +
   theme(legend.position = "right",
         title = element_text(size = 20),
         axis.text = element_text(size = 20),
         axis.title = element_text(size = 20),
-        legend.text = element_text(size = 14))
+        legend.text = element_markdown(size = 18),
+        legend.key.height = unit(0.5, "in"))
 
 ggsave(filename = "filamentous_diatom_nmds_amphipods.png", plot = nmds, device = "png", 
        path = "../figures/", width = 16, height = 10, units = "in")

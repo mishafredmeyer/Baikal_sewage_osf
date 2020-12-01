@@ -5,7 +5,8 @@
 ## the appropriate analysis in scripts 02-07. 
 
 
-# 1. Load packages --------------------------------------------------------
+
+# #1. Load packages and set directories  ----------------------------------
 
 library(tidyverse)
 library(lubridate)
@@ -14,6 +15,14 @@ library(janitor)
 library(sf)
 library(spdplyr)
 
+sub_dir <- "clean_disaggregated_data"
+output_dir <- file.path(here::here(), sub_dir)
+
+if (!dir.exists(output_dir)){
+  dir.create(output_dir)
+} else {
+  print("Dir 'clean_disaggregated_data' already exists!")
+}
 
 # 2. Load and clean PPCP data ---------------------------------------------
 
@@ -269,6 +278,8 @@ fatty_acid <- fatty_acid_orig %>%
                         yes = "Pallasea", no = Genus),
          Genus = ifelse(test = Genus == "Spl",
                         yes = "Periphyton", no = Genus),
+         Genus = ifelse(test = Genus == "Drapa",
+                        yes = "Draparnaldia", no = Genus),
          Species = ifelse(test = Genus == "Eulimnogammarus" & Species == "ver",
                           yes = "verrucosus", no = Species),
          Species = ifelse(test = Genus == "Eulimnogammarus" & Species == "vitatus",
@@ -279,7 +290,9 @@ fatty_acid <- fatty_acid_orig %>%
                           yes = "cancellus", no = Species),
          Species = ifelse(test = Species == "zone",
                           yes = NA, no = Species)) %>%
-  rename(site = location) %>%
+  rename(site = location,
+         c20_2w5_11 = c20_2_5_11,
+         c20_2w5_13 = c20_2_5_13) %>%
   select(site:c24_0, comments)
 
 head(fatty_acid)
@@ -313,7 +326,7 @@ total_lipid <- total_lipid_orig %>%
          Genus = ifelse(test = Genus == " Spl",
                         yes = "Periphyton", no = Genus),
          Genus = ifelse(test = grepl(pattern = "Drapa", x = Genus),
-                        yes = "Drapa", no = Genus),
+                        yes = "Draparnaldia", no = Genus),
          Genus = ifelse(test = grepl(pattern = "Hyalella", x = Genus),
                         yes = "Hyalella", no = Genus),
          Genus = ifelse(test = grepl(pattern = "Snails", x = Genus),
@@ -450,7 +463,7 @@ locs_centroids <- st_distance(x = site_loc_pts,
          population = ifelse(test = nearest_neighbor == "BK",
                              yes = 80, no = population),
          population = ifelse(test = nearest_neighbor == "LI",
-                             yes = 5000, no = population)) %>%
+                             yes = 2000, no = population)) %>%
   left_join(x = ., y = loc_shoreline_area_length,
             by = c("nearest_neighbor" = "site")) %>%
   mutate(distance_weighted_population = ((population * development_shoreline_length_km) /

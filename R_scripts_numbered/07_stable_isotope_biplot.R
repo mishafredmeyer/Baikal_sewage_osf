@@ -6,7 +6,18 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(viridis)
+library(ggtext)
 
+# Check if figures directory exists 
+# If not, create the figures directory
+sub_dir <- "figures"
+output_dir <- file.path(here::here(), sub_dir)
+
+if (!dir.exists(output_dir)){
+  dir.create(output_dir)
+} else {
+  print("Dir 'figures' already exists!")
+}
 
 # 1. Load the data --------------------------------------------------------
 
@@ -28,9 +39,12 @@ high <- c("BK-1", "EM-1", "LI-3", "LI-2", "LI-1")
 # of each C13 and N15 value for each taxon-IDW population grouping.
 
 foodweb_data <- stable_isotopes %>%
-  mutate(idw_group = ifelse(site %in% c(low, mod), "LOW/MOD", NA),
-         idw_group = ifelse(site %in% high, "HIGH", idw_group),
-         Genus = as.character(Genus)) %>%
+  mutate(idw_group = ifelse(site %in% c(low, mod), "Low/Mod", NA),
+         idw_group = ifelse(site %in% high, "High", idw_group),
+         Genus = as.character(Genus),
+         Genus = ifelse(test = Genus != "Periphyton",
+                        yes = paste0("*", as.character(Genus), "*"),
+                        no = Genus)) %>%
   unite(taxon_idw_pop, c("Genus", "idw_group"), sep = " + ") %>%
   filter(!grepl("NA", taxon_idw_pop)) %>%
   select(taxon_idw_pop, C13, N15) %>%
@@ -59,7 +73,8 @@ foodweb_plot <- ggplot(data = foodweb_data,
   xlab(expression(paste(delta^{13}, "C (\u2030)"))) +
   ylab(expression(paste(delta^{15}, "N (\u2030)"))) +
   theme_minimal() +
-  theme(text = element_text(size = 16))
+  theme(text = element_text(size = 16),
+        legend.text = element_markdown())
 
 ggsave("../figures/stable_isotopes_biplot.png", foodweb_plot,
        device = "png", width = 9, height = 6, units = "in")

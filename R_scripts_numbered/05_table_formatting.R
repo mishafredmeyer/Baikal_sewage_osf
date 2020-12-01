@@ -4,6 +4,17 @@
 library(tidyverse)
 library(stringr)
 
+# Check if tables directory exists 
+# If not, create the tables directory
+sub_dir <- "tables"
+output_dir <- file.path(here::here(), sub_dir)
+
+if (!dir.exists(output_dir)){
+  dir.create(output_dir)
+} else {
+  print("Dir 'tables' already exists!")
+}
+
 
 # 1. Load the data --------------------------------------------------------
 
