@@ -292,7 +292,9 @@ fatty_acid <- fatty_acid_orig %>%
                           yes = NA, no = Species)) %>%
   rename(site = location,
          c20_2w5_11 = c20_2_5_11,
-         c20_2w5_13 = c20_2_5_13) %>%
+         c20_2w5_13 = c20_2_5_13,
+         c14_1w5 = c14_1n5,
+         c17_1w7 = c17_1n7) %>%
   select(site:c24_0, comments)
 
 head(fatty_acid)

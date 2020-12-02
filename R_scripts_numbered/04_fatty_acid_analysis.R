@@ -418,7 +418,7 @@ ggsave(filename = "combined_ppcp_fattyy_acids.png", plot = arranged_plots, devic
 safa <- c("c12_0", "c14_0", "a_15_0",  "c15_0", "i_15_0",
           "c16_0", "a_17_0", "c17_0", "i_17_0", "c18_0", "c20_0", "c22_0", "c24_0")
 
-mufa <- c("c14_1n5", "c15_1w7", "c17_1n7",
+mufa <- c("c14_1n5", "c15_1w7", "c17_1w7",
           "c16_1w5", "c16_1w6", "c16_1w7", "c16_1w8", "c16_1w9",
           "c18_1w7", "c18_1w9", "c20_1w7", "c20_1w9", "c22_1w7", "c22_1w9")
 
