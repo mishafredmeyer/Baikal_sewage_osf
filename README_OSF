@@ -1,57 +1,61 @@
-Date of last README edit: 2020-10-15
+Date of last README edit: 2020-12-06
 
-# The Sewage-Indicator-Baikal-Ecological-Response (SIBER): Co-located sewage pollution, periphyton, and benthic macroinvertebrate community and foodweb dataset from Lake Baikal (Siberia)
+# A unified dataset of co-located sewage pollution, periphyton, and benthic macroinvertebrate community and food web structure from Lake Baikal (Siberia)
 
 # Overview
 
 ### Authors
-Michael F. Meyer
-Stephanie E. Hampton
-Ted Ozersky
-Kara H. Woo
-Kirill Shchapov
-Daniel D. Snow
-Emma J. Rosi
-Maxim A. Timofeyev
-Yulia M. Zaitseva
-Dmitry Yu. Karnaukhov
-Nina A. Bondarenko
-Aaron W. E. Galloway
-Julie Schram
-Matthew R. Brousil
+Michael F. Meyer<sup>1</sup>*
+Ted Ozersky<sup>2</sup>
+Kara H. Woo<sup>3</sup>
+Kirill Shchapov<sup>2</sup>
+Aaron W. E. Galloway<sup>4</sup>
+Julie B. Schram<sup>4</sup>
+Daniel D. Snow<sup>5</sup>
+Maxim A. Timofeyev<sup>6</sup>
+Dmitry Yu. Karnaukhov<sup>6</sup>
+Matthew R. Brousil<sup>3</sup>
+Stephanie E. Hampton<sup>3</sup>
 
+<sup>1.</sup>School of the Environment, Washington State University, Pullman, WA, USA
+<sup>2.</sup>Large Lakes Observatory, University of Minnesota - Duluth, Duluth, MN, USA
+<sup>3.</sup>Center for Environmental Research, Education, and Outreach, Washington State University, Pullman, WA, USA
+<sup>4.</sup>Oregon Institute of Marine Biology, University of Oregon, Charleston, OR, USA
+<sup>5.</sup>School of Natural Resources, University of Nebraska-Lincoln, Lincoln, NE, USA
+<sup>6.</sup>Biological Research Institute, Irkutsk State University, Irkutsk, Irkutsk Oblast, Russia
+
+*corresponding author: michael.f.meyer@wsu.edu
 
 ### Abstract
-Treated and untreated sewage released from lakeside development can introduce
-nutrients and micropollutants and restructure aquatic ecosystems. Lake Baikal,
-the world’s most ancient, biodiverse, and voluminous lake, has been
-experiencing localized sewage pollution from lakeside settlements, near which
-increasing filamentous algal abundance has suggested that littoral benthic
-communities are responding. We surveyed 40-km of Baikal’s southwestern
-shoreline 19-23 August 2015 for sewage indicators, including pharmaceuticals
-and microplastics with co-located periphyton and macroinvertebrate relative
-abundance and indicators of food web structure (stable isotopes and
-fatty acids). Unique identifiers corresponding to sampling locations are
-retained throughout all data files to facilitate interoperability among the
-dataset’s 125 variables. The data are structured in a tidy format (a tabular
-arrangement familiar to limnologists) to encourage future reuse. For Baikal,
-these data can supplement continued monitoring efforts. For lakes worldwide,
-these data can help synthesize sewage prevalence, intensity, and ecological
-consequences across spatial scales.
+Sewage released from lakeside development can introduce nutrients and
+micropollutants that can restructure aquatic ecosystems. Lake Baikal, the
+world’s most ancient, biodiverse, and voluminous lake, has been experiencing
+localized sewage pollution from lakeside settlements. Nearby increasing
+filamentous algal abundance suggests benthic communities are responding to this
+localized pollution. We surveyed 40-km of Lake Baikal’s southwestern shoreline
+19-23 August 2015 for sewage indicators, including pharmaceuticals, personal
+care products, and microplastics with co-located periphyton, macroinvertebrate,
+stable isotope, and fatty acid samplings. Unique identifiers corresponding to
+sampling locations are retained throughout all data files to facilitate
+interoperability among the dataset’s 150+ variables. The data are structured in
+a tidy format (a tabular arrangement familiar to limnologists) to encourage
+reuse. For Lake Baikal studies, these data can support continued monitoring and
+research efforts. For global studies of lakes, these data can help characterize
+sewage prevalence and ecological consequences of anthropogenic disturbance
+across spatial scales.
 
-The SIBER data product can be cited as:
 
-**Meyer*, M.F.**, Hampton, S.E., Ozersky, T., Woo, K.H., Shchapov, K., Snow, D.D.,
-Rosi, E.J., Timofeyev, M.A., Zaitseva, Yu.M., Karnaukhov, D.Yu., Bondarenko, N.A.,
-Galloway, A.W.E., Schram, J., Brousil, M.R.
-The Sewage-Indicator-Baikal-Ecological-Response (SIBER) dataset.
-Environmental Data Initiative.
+The  data product can be cited as:
 
-Corresponding author: michael.f.meyer@wsu.edu
+Meyer, M.F., Ozersky, T., Woo, K.H., Shchapov, K., Galloway, A.W.E.,
+Schram, J.B., Snow, D.D., Timofeyev, M.A., Karnaukhov, D.Yu., Brousil, M.R.,
+Hampton, S.E. A unified dataset of co-located sewage pollution, periphyton, and
+benthic macroinvertebrate community and food web structure from Lake Baikal
+(Siberia). Environmental Data Initiative.
 
 # Directory information and structure
 This main directory contains three subdirectories, each with their own version
-of the SIBER dataset.
+of the dataset.
 1. `original_data`: Raw, unaggregated data that may have misspellings, some
 taxa that were poorly preserved, and some misidentified taxa. These data
 are cleaned and aggregated by script `00_disaggregated_data_cleaning.R`.
@@ -64,8 +68,8 @@ aggregated with script `01_data_cleaning.R`.
 # Scripts and workflow
 
 ## Scripts in this repository
-Scripts that are central to the linear workflow of the SIBER build process are
-numbered consecutively.
+Scripts that are central to the linear workflow of the dataset's build process
+are numbered consecutively.
 
  1. `00_disaggregated_data_cleaning.R`: Aggregate datasets to replicate-level,
 remove poorly preserved or misidentified taxa, and correct spelling
@@ -107,7 +111,7 @@ remove poorly preserved or misidentified taxa, and correct spelling
 
 
 ## R session info:
-The following R packages are essential to produce SIBER:
+The following R packages are essential to produce the dataset:
 
   + [tidyverse](https://cran.r-project.org/web/packages/tidyverse/index.html)
   + [lubridate](https://cran.r-project.org/web/packages/lubridate/index.html)
@@ -198,21 +202,23 @@ Detailed R session info is below:
 ```
 
 # Funding
-Funding was provided by the
-National Science Foundation (NSF-DEB-1136637) to S.E.H., a Fulbright Fellowship
-to M.F.M., a NSF Graduate Research Fellowship to M.F.M. (NSF-DGE-1347973), and
-the Russian Ministry of Education and Science Research Project
-(No. GR 01201461929; 1354-2014/51).
+Funding was provided by the National Science Foundation (NSF-DEB-1136637) to
+S.E.H., a Fulbright Fellowship to M.F.M., a NSF Graduate Research Fellowship to
+M.F.M. (NSF-DGE-1347973), and the Russian Ministry of Education and Science
+Research Project (N FZZE-2020-0026).
 
 # Acknowledgements
-We would like to thank the faculty, students, staff, and mariners of the
-Irkutsk State University’s Biological Research Institute Biostation for their
-expert field, taxonomic, and laboratory support; Marianne Moore and Bart De
-Stasio for helpful advice; the researchers and students of the Siberian Branch
-of the Russian Academy of Sciences Limnological Institute for expert taxonomic
-and logistical assistance; Stephen M. Powers, Stephanie G. Labou,
-Stephen L. Katz, Brian P. Lanouette, John R. Loffredo, Alexander K. Fremier,
-Erica J. Crespi, Daniel L. Preston, and Jim J. Elser for offering insights
-throughout the development of this project. This work serves as one chapter
-of M.F.M.’s doctoral dissertation in Environmental and Natural Resource
+We would like to thank the faculty, students, staff, and mariners of the Irkutsk
+State University’s Biological Research Institute Biostation for their expert
+field, taxonomic, and laboratory support; Marianne Moore and Bart De Stasio for
+helpful advice; the researchers and students of the Siberian Branch of the
+Russian Academy of Sciences Limnological Institute for expert taxonomic and
+logistical assistance; Oleg A. Timoshkin, Tatiana Ya. Sitnikova, Irina V.
+Mekhanikova, and Vadim V. Takhteev for offering insights and taxonomic training
+throughout the development of this project. Funding was provided by the National
+Science Foundation (NSF-DEB-1136637) to S.E.H., a Fulbright Fellowship to M.F.M.,
+a NSF Graduate Research Fellowship to M.F.M. (NSF-DGE-1347973), and Russian
+Ministry of Science and Education (N FZZE-2020-0026). This work serves as one
+chapter of M.F.M.’s doctoral dissertation in Environmental and Natural Resource
 Sciences at Washington State University.
+ 

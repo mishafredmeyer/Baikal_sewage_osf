@@ -48,7 +48,7 @@ metadata_formatted <- metadata %>%
   mutate(Adjacent_Population = ifelse(test = Site %in% c("BGO-2", "BGO-3"),
                                       yes = 600, no = 0),
          Adjacent_Population = ifelse(test = Site %in% c("BK-1", "BK-2", "BK-3"),
-                                      yes = 200, no = Adjacent_Population),
+                                      yes = 80, no = Adjacent_Population),
          Adjacent_Population = ifelse(test = Site %in% c("LI-1", "LI-2", "LI-3"),
                                       yes = 2000, no = Adjacent_Population),
          Adjacent_Population = ifelse(test = Site %in% c("OS-1", "OS-2", "OS-3"),
@@ -101,7 +101,7 @@ low <- c("BGO-1", "BGO-2", "BGO-3", "KD-1", "KD-2", "MS-1", "OS-1")
 mod <- c("BK-2", "BK-3", "SM-1", "OS-3")
 high <- c("BK-1", "EM-1", "LI-3", "LI-2", "LI-1", "OS-2")
 
-# This table is associated with Table 3 in the manuscript
+# This table is associated with Table 2 in the manuscript
 
 meta_nut_ppcp_mp <- full_join(x = metadata_formatted,
                               y = nutrients_formatted,
@@ -122,5 +122,5 @@ meta_nut_ppcp_mp <- full_join(x = metadata_formatted,
          distance_weighted_population,
          Categorical_distance_weighted_population)
 
-write.csv(x = meta_nut_ppcp_mp, file = "../tables/combined_table3.csv",
+write.csv(x = meta_nut_ppcp_mp, file = "../tables/combined_table2.csv",
           row.names = FALSE)

@@ -2,9 +2,7 @@
 # indicator data in Lake Baikal to produce a stable isotope
 # biplot for the associated manuscript. 
 
-library(dplyr)
-library(tidyr)
-library(ggplot2)
+library(tidyverse)
 library(viridis)
 library(ggtext)
 

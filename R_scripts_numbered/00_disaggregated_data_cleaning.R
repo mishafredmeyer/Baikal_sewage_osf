@@ -383,7 +383,7 @@ write.csv(x = microplastics, file = "../clean_disaggregated_data/microplastics.c
 # Load the shapefiles and metadata containing information of the development
 # polygons and the lake shorelines.
 
-baikal_shapefile <- sf::st_read(dsn = "../clean_disaggregated_data/Baikal_shapefile.kml")
+baikal_shapefile <- sf::st_read(dsn = "../original_data/Baikal_shapefile.kml")
 
 
 metadata <- read.csv(file = "../clean_disaggregated_data/metadata.csv",
