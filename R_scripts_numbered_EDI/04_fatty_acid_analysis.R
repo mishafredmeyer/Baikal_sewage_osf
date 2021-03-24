@@ -11,7 +11,6 @@ library(ggpubr)
 library(ggrepel)
 library(ggtext)
 library(fs)
-library(broom)
 
 # Check if figures directory exists 
 # If not, create the figures directory
@@ -23,81 +22,6 @@ if (!dir.exists(output_dir)){
 } else {
   print("Dir 'figures' already exists!")
 }
-
-# Define a function for unvariate permutational analysis
-
-permute_data_analytics <- function(data, metric, full_model, metric_plot_title, log_transform_response = TRUE){
-  for(i in 1:5000){
-    permuted_data <- data %>%
-      select(paste(metric)) %>%
-      rename("permuted_metric" = paste(metric)) %>%
-      sample_frac(size = 1) %>%
-      cbind(., data)
-    
-    if(log_transform_response){
-      permuted_model <- lm(log10(permuted_metric) ~ log10(distance_weighted_population),
-                           data = permuted_data)
-    }else{
-      permuted_model <- lm((permuted_metric) ~ log10(distance_weighted_population),
-                           data = permuted_data)
-    }
-    
-    
-    if(i == 1){
-      glance_repo <- glance(permuted_model)
-      tidy_repo <- tidy(permuted_model)
-    } else {
-      glance_repo <- rbind(glance_repo, glance(permuted_model))
-      tidy_repo <- rbind(tidy_repo, tidy(permuted_model)) %>%
-        filter(term != "(Intercept)")
-    }
-  }
-  
-  tidy_full_model <- tidy(full_model) %>%
-    filter(term != "(Intercept)")
-  
-  permuted_plot_pval <- ggplot() +
-    geom_histogram(data = tidy_repo, 
-                   mapping = aes(p.value), 
-                   fill = "white",
-                   color = "black", 
-                   binwidth = 0.025) +
-    geom_vline(data = tidy_full_model,
-               mapping = aes(xintercept = p.value)) +
-    ggtitle(paste(metric_plot_title)) +
-    ylab("Frequency") +
-    xlab("P-Value") +
-    theme_minimal()
-  
-  permuted_plot_estimate <- ggplot() +
-    geom_histogram(data = tidy_repo, 
-                   mapping = aes(estimate), 
-                   fill = "white",
-                   color = "black") +
-    geom_vline(data = tidy_full_model,
-               mapping = aes(xintercept = estimate)) +
-    ggtitle(paste(metric_plot_title)) +
-    ylab("") +
-    xlab("Estimate") +
-    theme_minimal()
-  
-  permuted_plot_rsquared <- ggplot() +
-    geom_histogram(data = glance_repo, 
-                   mapping = aes(r.squared), 
-                   fill = "white",
-                   color = "black") +
-    geom_vline(data = glance(full_model),
-               mapping = aes(xintercept = r.squared)) +
-    ggtitle(paste(metric_plot_title)) +
-    ylab("") +
-    xlab("R Squared") +
-    theme_minimal() 
-  
-  #arranged_plots <- ggarrange(permuted_plot_pval, permuted_plot_estimate, permuted_plot_rsquared, ncol = 3, nrow = 1)
-  
-  return(list(permuted_plot_pval, permuted_plot_estimate, permuted_plot_rsquared))
-}
-
 
 # 1. Load the data --------------------------------------------------------
 
@@ -166,9 +90,10 @@ mean_var <- fatty_acid_whole_wide %>%
     Variance = var(value)
   ) %>%
   mutate(Var_Mean_Ratio = Variance / Mean) %>%
+  column_to_rownames(var = "fa") %>%
   arrange(desc(Var_Mean_Ratio))
 
-write.csv(x = mean_var, file = "../tables/cv_all_fa.csv", row.names = FALSE)
+write.csv(x = mean_var, file = "../tables/cv_all_fa.csv", row.names = TRUE)
 
 # Perform NMDS
 whole_fatty_acid_metaMDS <- metaMDS(comm = fatty_acid_whole_wide[, 5:63],
@@ -254,10 +179,11 @@ mean_var <- fatty_acid_essential_wide %>%
     Variance = var(value)
   ) %>%
   mutate(Var_Mean_Ratio = Variance / Mean) %>%
+  column_to_rownames(var = "fa") %>%
   arrange(desc(Var_Mean_Ratio))
 
 write.csv(x = mean_var[order(mean_var$Var_Mean_Ratio, decreasing = TRUE), ], 
-          file = "../tables/cv_efa.csv", row.names = FALSE)
+          file = "../tables/cv_efa.csv", row.names = TRUE)
 
 
 # Perform NMDS
@@ -335,15 +261,6 @@ peri_ppcp_lm <- lm((c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c1
 
 summary(peri_ppcp_lm)
 
-peri_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_dist %>%
-                                                 ungroup() %>%
-                                                 filter(Genus == "Periphyton") %>%
-                                                 mutate(fil_diatom_fa_ratio = (c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c14_0 + c16_0)), 
-                                               metric = "fil_diatom_fa_ratio", 
-                                               metric_plot_title = "Periphyton vs. [Total PPCP]",
-                                               full_model = peri_ppcp_lm, 
-                                               log_transform_response = FALSE)
-
 # Second compare essential fatty acid ratios in E. verrucosus with total PPCP conentration
 eulimnogammarus_verrucosus_ppcp_lm <- 
   lm((c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c14_0 + c16_0) ~ log10(ppcp_sum),
@@ -352,15 +269,6 @@ eulimnogammarus_verrucosus_ppcp_lm <-
 
 summary(eulimnogammarus_verrucosus_ppcp_lm)
 
-eulimnogammarus_verrucosus_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_dist %>%
-                                                 ungroup() %>%
-                                                 filter(taxon == "Eulimnogammarus_verrucosus") %>%
-                                                 mutate(fil_diatom_fa_ratio = (c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c14_0 + c16_0)), 
-                                               metric = "fil_diatom_fa_ratio", 
-                                               metric_plot_title = "Eulimnogammarus verrucosus vs. [Total PPCP]",
-                                               full_model = eulimnogammarus_verrucosus_ppcp_lm, 
-                                               log_transform_response = FALSE)
-
 # Third compare essential fatty acid ratios in E. vittatus  with total PPCP conentration
 eulimnogammarus_vitatus_ppcp_lm <- 
   lm((c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c14_0 + c16_0) ~ log10(ppcp_sum),
@@ -368,15 +276,6 @@ eulimnogammarus_vitatus_ppcp_lm <-
                    taxon == "Eulimnogammarus_vittatus"))
 
 summary(eulimnogammarus_vitatus_ppcp_lm)
-
-eulimnogammarus_vitatus_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_dist %>%
-                                                                       ungroup() %>%
-                                                                       filter(taxon == "Eulimnogammarus_vittatus") %>%
-                                                                       mutate(fil_diatom_fa_ratio = (c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c14_0 + c16_0)), 
-                                                                     metric = "fil_diatom_fa_ratio", 
-                                                                     metric_plot_title = "Eulimnogammarus vittatus vs. [Total PPCP]",
-                                                                     full_model = eulimnogammarus_vitatus_ppcp_lm, 
-                                                                     log_transform_response = FALSE)
 
 # Extract model R-squared values from each linear model
 r_squared <- c(summary(peri_ppcp_lm)$r.squared,
@@ -442,15 +341,6 @@ peri_ppcp_lm <- lm(((c18_3w3 + c18_2w6) / (c20_5w3)) ~ log10(ppcp_sum),
 
 summary(peri_ppcp_lm)
 
-peri_efa_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_dist %>%
-                                                 ungroup() %>%
-                                                 filter(Genus == "Periphyton") %>%
-                                                 mutate(fil_diatom_fa_ratio = (c18_3w3 + c18_2w6) / (c20_5w3)), 
-                                               metric = "fil_diatom_fa_ratio", 
-                                               metric_plot_title = "Periphyton vs. [Total PPCP]",
-                                               full_model = peri_ppcp_lm, 
-                                               log_transform_response = FALSE)
-
 # Second compare essential fatty acid ratios in E. verrucosus with total PPCP conentration
 eulimnogammarus_verrucosus_ppcp_lm <- lm(((c18_3w3 + c18_2w6) / (c20_5w3)) ~ log10(ppcp_sum),
                                          data = filter(fatty_acid_prop_ppcp_meta_dist, 
@@ -458,30 +348,12 @@ eulimnogammarus_verrucosus_ppcp_lm <- lm(((c18_3w3 + c18_2w6) / (c20_5w3)) ~ log
 
 summary(eulimnogammarus_verrucosus_ppcp_lm)
 
-eulimnogammarus_verrucosus_efa_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_dist %>%
-                                                                       ungroup() %>%
-                                                                       filter(taxon == "Eulimnogammarus_verrucosus") %>%
-                                                                       mutate(fil_diatom_fa_ratio = (c18_3w3 + c18_2w6) / (c20_5w3)), 
-                                                                     metric = "fil_diatom_fa_ratio", 
-                                                                     metric_plot_title = "Eulimnogammarus verrucosus vs. [Total PPCP]",
-                                                                     full_model = eulimnogammarus_verrucosus_ppcp_lm, 
-                                                                     log_transform_response = FALSE)
-
 # Third compare essential fatty acid ratios in E. vittatus  with total PPCP conentration
-eulimnogammarus_vittatus_ppcp_lm <- lm(((c18_3w3 + c18_2w6) / (c20_5w3)) ~ log10(ppcp_sum),
+eulimnogammarus_vitatus_ppcp_lm <- lm(((c18_3w3 + c18_2w6) / (c20_5w3)) ~ log10(ppcp_sum),
                                          data = filter(fatty_acid_prop_ppcp_meta_dist, 
                                                        taxon == "Eulimnogammarus_vittatus"))
 
-summary(eulimnogammarus_vittatus_ppcp_lm)
-
-eulimnogammarus_vittatus_efa_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_dist %>%
-                                                                    ungroup() %>%
-                                                                    filter(taxon == "Eulimnogammarus_vittatus") %>%
-                                                                    mutate(fil_diatom_fa_ratio = (c18_3w3 + c18_2w6) / (c20_5w3)), 
-                                                                  metric = "fil_diatom_fa_ratio", 
-                                                                  metric_plot_title = "Eulimnogammarus vittatus vs. [Total PPCP]",
-                                                                  full_model = eulimnogammarus_vitatus_ppcp_lm, 
-                                                                  log_transform_response = FALSE)
+summary(eulimnogammarus_vitatus_ppcp_lm)
 
 # Extract model R-squared values from each linear model
 r_squared <- c(summary(peri_ppcp_lm)$r.squared,
@@ -536,28 +408,6 @@ arranged_plots <- ggarrange(ppcp_filamentous_diatom_fa_plot, ppcp_efa_plot, ncol
 
 ggsave(filename = "combined_ppcp_fattyy_acids.png", plot = arranged_plots, device = "png", path = "../figures/", 
        width = 12, height = 12, units = "in")
-
-permuted_fil_dia_plots <- c(peri_ppcp_lm_permute, 
-                            eulimnogammarus_verrucosus_ppcp_lm_permute, 
-                            eulimnogammarus_vitatus_ppcp_lm_permute)
-
-arranged_plots <- ggarrange(plotlist = permuted_fil_dia_plots, ncol = 3, nrow = 3, 
-                             font.label = list(size = 20, face = "bold"))
-
-ggsave(filename = "permuted_fil_dia_fatty_acids.png", plot = arranged_plots, 
-       device = "png", path = "../figures/", 
-       width = 14, height = 12, units = "in")
-
-permuted_efa_plots <- c(peri_efa_ppcp_lm_permute, 
-                        eulimnogammarus_verrucosus_efa_ppcp_lm_permute, 
-                        eulimnogammarus_vittatus_efa_ppcp_lm_permute)
-
-arranged_plots <- ggarrange(plotlist = permuted_efa_plots, ncol = 3, nrow = 3, 
-                            font.label = list(size = 20, face = "bold"))
-
-ggsave(filename = "permuted_efa_fatty_acids.png", plot = arranged_plots, 
-       device = "png", path = "../figures/", 
-       width = 14, height = 12, units = "in")
 
 
 # 4. Analyses of fatty acid groups ----------------------------------------

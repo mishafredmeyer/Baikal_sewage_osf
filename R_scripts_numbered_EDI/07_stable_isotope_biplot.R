@@ -5,7 +5,6 @@
 library(tidyverse)
 library(viridis)
 library(ggtext)
-library(car)
 
 # Check if figures directory exists 
 # If not, create the figures directory
@@ -51,12 +50,11 @@ foodweb_data <- stable_isotopes %>%
   summarize(mean_N15 = mean(N15),
             mean_C13 = mean(C13),
             sd_N15 = sd(N15),
-            sd_C13 = sd(C13),
-            n = length(taxon_idw_pop)) %>%
-  mutate(taxon_idw_pop = paste(taxon_idw_pop, " (N=", n, ")", sep = ""))
+            sd_C13 = sd(C13))
 
 
 # Step 4: Build the stable isotopes biplot -------------------------------
+
 
 foodweb_plot <- ggplot(data = foodweb_data, 
                        aes(mean_C13, mean_N15, 
@@ -78,29 +76,3 @@ foodweb_plot <- ggplot(data = foodweb_data,
 
 ggsave("../figures/stable_isotopes_biplot.png", foodweb_plot,
        device = "png", width = 9, height = 6, units = "in")
-
-
-# Step 5: Perform signifance tests ----------------------------------------
-
-foodweb_analysis_data <- stable_isotopes %>%
-  mutate(idw_group = ifelse(site %in% c(low, mod), "Low/Mod", NA),
-         idw_group = ifelse(site %in% high, "High", idw_group),
-         Genus = as.character(Genus),
-         Genus = ifelse(test = Genus != "Periphyton",
-                        yes = paste0("*", as.character(Genus), "*"),
-                        no = Genus)) %>%
-  unite(taxon_idw_pop, c("Genus", "idw_group"), sep = " + ") %>%
-  filter(!grepl("NA", taxon_idw_pop)) %>%
-  select(taxon_idw_pop, C13, N15)
-
-Anova(lm(formula = N15 ~ taxon_idw_pop, 
-         data = foodweb_analysis_data %>%
-           filter(grepl(pattern = "Periphyton", x = taxon_idw_pop, ignore.case = TRUE))), 
-      type = "II")
-
-Anova(lm(formula = N15 ~ taxon_idw_pop, 
-         data = foodweb_analysis_data %>%
-           filter(grepl(pattern = "Eulimnogammarus", x = taxon_idw_pop, ignore.case = TRUE))), 
-      type = "II")
-
-

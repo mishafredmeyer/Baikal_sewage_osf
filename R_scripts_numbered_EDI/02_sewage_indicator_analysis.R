@@ -12,7 +12,6 @@ library(viridis)
 library(viridisLite)
 library(ggpubr)
 library(fs)
-library(broom)
 
 # Check if figures directory exists 
 # If not, create the figures directory
@@ -23,81 +22,6 @@ if (!dir.exists(output_dir)){
   dir.create(output_dir)
 } else {
   print("Dir 'figures' already exists!")
-}
-
-# Here, we will define a function to perform a permutational analysis of the 
-# of the data. 
-
-permute_data_analytics <- function(data, metric, full_model, metric_plot_title, log_transform_response = TRUE){
-  for(i in 1:5000){
-    permuted_data <- data %>%
-      select(paste(metric)) %>%
-      rename("permuted_metric" = paste(metric)) %>%
-      sample_frac(size = 1) %>%
-      cbind(., data)
-    
-    if(log_transform_response){
-      permuted_model <- lm(log10(permuted_metric) ~ log10(distance_weighted_population),
-                           data = permuted_data)
-    }else{
-      permuted_model <- lm((permuted_metric) ~ log10(distance_weighted_population),
-                           data = permuted_data)
-    }
-    
-    
-    if(i == 1){
-      glance_repo <- glance(permuted_model)
-      tidy_repo <- tidy(permuted_model)
-    } else {
-      glance_repo <- rbind(glance_repo, glance(permuted_model))
-      tidy_repo <- rbind(tidy_repo, tidy(permuted_model)) %>%
-        filter(term != "(Intercept)")
-    }
-  }
-  
-  tidy_full_model <- tidy(full_model) %>%
-    filter(term != "(Intercept)")
-  
-  permuted_plot_pval <- ggplot() +
-    geom_histogram(data = tidy_repo, 
-                   mapping = aes(p.value), 
-                   fill = "white",
-                   color = "black", 
-                   binwidth = 0.025) +
-    geom_vline(data = tidy_full_model,
-               mapping = aes(xintercept = p.value)) +
-    ggtitle(paste(metric_plot_title)) +
-    ylab("Frequency") +
-    xlab("P-Value") +
-    theme_minimal()
-  
-  permuted_plot_estimate <- ggplot() +
-    geom_histogram(data = tidy_repo, 
-                   mapping = aes(estimate), 
-                   fill = "white",
-                   color = "black") +
-    geom_vline(data = tidy_full_model,
-               mapping = aes(xintercept = estimate)) +
-    ggtitle(paste(metric_plot_title)) +
-    ylab("") +
-    xlab("Estimate") +
-    theme_minimal()
-  
-  permuted_plot_rsquared <- ggplot() +
-    geom_histogram(data = glance_repo, 
-                   mapping = aes(r.squared), 
-                   fill = "white",
-                   color = "black") +
-    geom_vline(data = glance(full_model),
-               mapping = aes(xintercept = r.squared)) +
-    ggtitle(paste(metric_plot_title)) +
-    ylab("") +
-    xlab("R Squared") +
-    theme_minimal() 
-  
-  #arranged_plots <- ggarrange(permuted_plot_pval, permuted_plot_estimate, permuted_plot_rsquared, ncol = 3, nrow = 1)
-  
-  return(list(permuted_plot_pval, permuted_plot_estimate, permuted_plot_rsquared))
 }
 
 # 2. Load data ------------------------------------------------------------
@@ -158,19 +82,13 @@ ppcp_PI_plot <- ggplot(data = ppcp_meta_dist,
            label = paste("p-value: ",
                          round(summary(ppcp_PI_model)$coefficients[2, 4], 3),
                          "\nR-squared: ",
-                         round(summary(ppcp_PI_model)$r.squared, 3), 
-                         "\nN = ", nrow(ppcp_meta_dist)),
+                         round(summary(ppcp_PI_model)$r.squared, 3)),
            parse = FALSE) +
   theme_minimal()
 
 # Export plot
 ggsave(filename = "../figures/ppcp_PI_plot.png", plot = ppcp_PI_plot,
        device = "png", width = 18, height = 12, units = "in")
-
-ppcp_permute_plots <- permute_data_analytics(data = ppcp_meta_dist, 
-                                             metric = "ppcp_sum", 
-                                             metric_plot_title = "PPCP vs. IDW Population", 
-                                             full_model = ppcp_PI_model)
 
 
 # 4. Nutrient analysis ----------------------------------------------------
@@ -208,11 +126,6 @@ phosphorus_PI_plot <- ggplot(data = nutrients_meta_dist,
 ggsave("phosphorus_PI_plot.png", phosphorus_PI_plot, device = "png",
        path = "../figures", width = 18, height = 12, units = "in")
 
-phosphorus_permute_plots <- permute_data_analytics(data = nutrients_meta_dist, 
-                                                   metric = "mean_tp_mg_dm3", 
-                                                   metric_plot_title = "Total Phosphorus vs. IDW Population", 
-                                                   full_model = phosphorus_PI_model)
-
 
 # 4.2 Nitrate -------------------------------------------------------------
 
@@ -242,11 +155,6 @@ nitrate_PI_plot <- ggplot(data = nutrients_meta_dist,
 # Export plot
 ggsave("nitrate_PI_plot.png", nitrate_PI_plot, device = "png",
        path = "../figures", width = 18, height = 12, units = "in")
-
-nitrate_permute_plots <- permute_data_analytics(data = nutrients_meta_dist, 
-                                                   metric = "mean_no3_mg_dm3", 
-                                                   metric_plot_title = "Nitrate vs. IDW Population", 
-                                                   full_model = nitrate_PI_model)
 
 
 # 4.3 Ammonium ------------------------------------------------------------
@@ -278,10 +186,6 @@ ammonium_PI_plot <- ggplot(nutrients_meta_dist,
 ggsave(filename = "../figures/ammonium_PI_plot.png", plot = ammonium_PI_plot,
        device = "png", width = 18, height = 12, units = "in")
 
-ammonium_permute_plots <- permute_data_analytics(data = nutrients_meta_dist, 
-                                                metric = "mean_nh4_mg_dm3", 
-                                                metric_plot_title = "Ammonium vs. IDW Population", 
-                                                full_model = ammonium_PI_model)
 
 # 5. Stable isotopes analysis ---------------------------------------------
 
@@ -292,7 +196,7 @@ stable_isotopes_meta_dist <- full_join(x = stable_isotopes, y = metadata_dist,
 # 5.1 N15 -----------------------------------------------------------------
 
 # Analyze N15 as a function of population intensity
-n15_PI_model <- lm((N15) ~ log10(distance_weighted_population),
+n15_PI_model <- lm(log10(N15) ~ log10(distance_weighted_population),
                    data = stable_isotopes_meta_dist[stable_isotopes$Genus != "Periphyton", ])
 
 # View model results
@@ -300,14 +204,14 @@ summary(n15_PI_model)
 
 # Plot linear model
 n15_PI_plot <- ggplot(data = stable_isotopes_meta_dist[stable_isotopes$Genus != "Periphyton", ],
-                      aes(x = log10(distance_weighted_population), y = (N15))) +
+                      aes(x = log10(distance_weighted_population), y = log10(N15))) +
   geom_point() +
   geom_smooth(method = "lm", se = TRUE) +
   ylab(expression(paste("log10(",delta^{15}, "N (\u2030))"))) +
   xlab("log10(IDW Population)") +
   ggtitle(expression(paste(delta^{15}, "N \u2030  vs. IDW Population"))) +
   xlim(c(2.75, 3.75)) +
-  annotate(geom = "label", x = 3.35, y = 6.5,
+  annotate(geom = "label", x = 3.00, y = 0.89,
            label = paste0("p-value: ",
                           round(summary(n15_PI_model)$coefficients[2, 4], 3),
                           "\nR-squared: ",
@@ -317,12 +221,6 @@ n15_PI_plot <- ggplot(data = stable_isotopes_meta_dist[stable_isotopes$Genus != 
 # Export plot
 ggsave(filename = "../figures/n15_PI_plot.png", plot = n15_PI_plot,
        device = "png", width = 18, height = 12, units = "in")
-
-n15_permute_plots <- permute_data_analytics(data = stable_isotopes_meta_dist, 
-                                                 metric = "N15", 
-                                                 metric_plot_title = "N \u2030 vs. IDW Population", 
-                                                 full_model = n15_PI_model, 
-                                                 log_transform_response = FALSE)
 
 
 # 5.2 C13 -----------------------------------------------------------------
@@ -354,11 +252,6 @@ c13_PI_plot <- ggplot(stable_isotopes_meta_dist[stable_isotopes$Genus != "Periph
 ggsave(filename = "../figures/c13_PI_plot.png", plot = c13_PI_plot,
        device = "png", width = 18, height = 12, units = "in")
 
-c13_permute_plots <- permute_data_analytics(data = stable_isotopes_meta_dist, 
-                                            metric = "C13", 
-                                            metric_plot_title = "C \u2030 vs. IDW Population", 
-                                            full_model = c13_PI_model, 
-                                            log_transform_response = FALSE)
 
 # 6. Chlorophyll a analysis -----------------------------------------------
 
@@ -382,7 +275,7 @@ chlorophylla_PI_plot <- ggplot(data = chlorophylla_meta_dist,
   ylab("Chlorophyll a") +
   xlab("log10(IDW Population)") +
   ggtitle("Chlorophyll a vs. IDW Population") +
-  annotate(geom = "label", x = 3.35, y = 1.3,
+  annotate(geom = "label", x = 4.00, y = 1.3,
            label = paste0("p-value: ",
                           round(summary(chlorophylla_PI_model)$coefficients[2, 4], 3),
                           "\nR-squared: ",
@@ -394,11 +287,6 @@ ggsave(filename = "../figures/chlorophylla_PI_plot.png",
        plot = chlorophylla_PI_plot, device = "png", width = 18, height = 12,
        units = "in")
 
-chlorophylla_permute_plots <- permute_data_analytics(data = chlorophylla_meta_dist, 
-                                            metric = "mean_chlorophylla", 
-                                            metric_plot_title = "Chlorophyll a vs. IDW Population", 
-                                            full_model = chlorophylla_PI_model, 
-                                            log_transform_response = FALSE)
 
 # 7. Microplastics analysis -----------------------------------------------
 
@@ -447,11 +335,6 @@ ggsave(filename = "../figures/microplastics_total_PI_plot.png",
        plot = microplastics_total_PI_plot, device = "png", width = 18,
        height = 12, units = "in")
 
-microplastics_total_permute_plots <- permute_data_analytics(data = microplastics_meta_dist, 
-                                                    metric = "mean_total", 
-                                                    metric_plot_title = "Total Microplastics vs. IDW Population", 
-                                                    full_model = microplastics_total_PI_model, 
-                                                    log_transform_response = FALSE)
 
 # 7.2 Mean microplastic density -------------------------------------------
 
@@ -484,12 +367,6 @@ ggsave(filename = "../figures/microplastics_density_PI_plot.png",
        plot = microplastics_density_PI_plot, device = "png", width = 18,
        height = 12, units = "in")
 
-microplastics_density_permute_plots <- permute_data_analytics(data = microplastics_meta_dist, 
-                                                            metric = "mean_density", 
-                                                            metric_plot_title = "Microplastics Density vs. IDW Population", 
-                                                            full_model = microplastics_density_PI_model, 
-                                                            log_transform_response = FALSE)
-
 
 # 8. Combine plots --------------------------------------------------------
 
@@ -497,12 +374,4 @@ ggarrange(ppcp_PI_plot, n15_PI_plot, phosphorus_PI_plot, chlorophylla_PI_plot,
           nitrate_PI_plot, microplastics_total_PI_plot, ammonium_PI_plot,
           microplastics_density_PI_plot, ncol = 2, nrow = 4, labels = "AUTO") %>%
   ggexport(filename = "../figures/combined_plot.png",
-           height = 1900, width = 1200, res = 120)
-
-combined_permuted_plots <- c(ppcp_permute_plots, n15_permute_plots, phosphorus_permute_plots, chlorophylla_permute_plots,
-                             nitrate_permute_plots, ammonium_permute_plots, microplastics_total_permute_plots, 
-                             microplastics_density_permute_plots)
-
-ggarrange(plotlist =  combined_permuted_plots, ncol = 3, nrow = 8) %>%
-  ggexport(filename = "../figures/permuted_combined_plot.png",
            height = 1900, width = 1200, res = 120)
