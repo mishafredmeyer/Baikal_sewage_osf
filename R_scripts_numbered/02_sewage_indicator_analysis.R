@@ -13,6 +13,7 @@ library(viridisLite)
 library(ggpubr)
 library(fs)
 library(broom)
+library(ggtext)
 
 # Check if figures directory exists 
 # If not, create the figures directory
@@ -62,25 +63,15 @@ permute_data_analytics <- function(data, metric, full_model, metric_plot_title, 
     geom_histogram(data = tidy_repo, 
                    mapping = aes(p.value), 
                    fill = "white",
-                   color = "black", 
-                   binwidth = 0.025) +
-    geom_vline(data = tidy_full_model,
-               mapping = aes(xintercept = p.value)) +
-    ggtitle(paste(metric_plot_title)) +
-    ylab("Frequency") +
-    xlab("P-Value") +
-    theme_minimal()
-  
-  permuted_plot_estimate <- ggplot() +
-    geom_histogram(data = tidy_repo, 
-                   mapping = aes(estimate), 
-                   fill = "white",
                    color = "black") +
     geom_vline(data = tidy_full_model,
-               mapping = aes(xintercept = estimate)) +
-    ggtitle(paste(metric_plot_title)) +
-    ylab("") +
-    xlab("Estimate") +
+               mapping = aes(xintercept = p.value),
+               linetype = "dashed", size = 2, color = viridis(30)[15]) +
+    ggtitle(paste(metric_plot_title, " (", 
+                  round(length(tidy_repo$p.value[tidy_repo$p.value <= tidy_full_model$p.value])/5000, 3)*100, 
+                  "% of models had lower p-value)", sep = "")) +
+    ylab("Frequency") +
+    xlab("P-Value") +
     theme_minimal()
   
   permuted_plot_rsquared <- ggplot() +
@@ -89,15 +80,17 @@ permute_data_analytics <- function(data, metric, full_model, metric_plot_title, 
                    fill = "white",
                    color = "black") +
     geom_vline(data = glance(full_model),
-               mapping = aes(xintercept = r.squared)) +
-    ggtitle(paste(metric_plot_title)) +
+               mapping = aes(xintercept = r.squared),
+               linetype = "dashed", size = 2, color = viridis(30)[15]) +
+    ggtitle(paste(metric_plot_title, " (", 
+                  round(length(glance_repo$r.squared[glance_repo$r.squared >= glance(full_model)$r.squared])/5000, 3)*100, 
+                  "% of models had higher R<sup>2</sup>)", sep = "")) +
     ylab("") +
     xlab("R Squared") +
-    theme_minimal() 
+    theme_minimal() +
+    theme(plot.title = element_markdown())
   
-  #arranged_plots <- ggarrange(permuted_plot_pval, permuted_plot_estimate, permuted_plot_rsquared, ncol = 3, nrow = 1)
-  
-  return(list(permuted_plot_pval, permuted_plot_estimate, permuted_plot_rsquared))
+  return(list(permuted_plot_pval, permuted_plot_rsquared))
 }
 
 # 2. Load data ------------------------------------------------------------
@@ -201,7 +194,8 @@ phosphorus_PI_plot <- ggplot(data = nutrients_meta_dist,
            label = paste0("p-value: ",
                           round(summary(phosphorus_PI_model)$coefficients[2, 4], 3),
                           "\nR-squared: ",
-                          round(summary(phosphorus_PI_model)$r.squared, 3))) +
+                          round(summary(phosphorus_PI_model)$r.squared, 3), 
+                          "\nN = ", nrow(nutrients_meta_dist))) +
   theme_minimal()
 
 # Export plot
@@ -236,7 +230,8 @@ nitrate_PI_plot <- ggplot(data = nutrients_meta_dist,
            label = paste0("p-value: ",
                           round(summary(nitrate_PI_model)$coefficients[2, 4], 3),
                           "\nR-squared: ",
-                          round(summary(nitrate_PI_model)$r.squared, 3))) +
+                          round(summary(nitrate_PI_model)$r.squared, 3), 
+                          "\nN = ", nrow(nutrients_meta_dist))) +
   theme_minimal()
 
 # Export plot
@@ -271,7 +266,8 @@ ammonium_PI_plot <- ggplot(nutrients_meta_dist,
            label = paste0("p-value: ",
                           round(summary(ammonium_PI_model)$coefficients[2, 4], 3),
                           "\nR-squared: ",
-                          round(summary(ammonium_PI_model)$r.squared, 3))) +
+                          round(summary(ammonium_PI_model)$r.squared, 3), 
+                          "\nN = ", nrow(nutrients_meta_dist))) +
   theme_minimal()
 
 # Export plot
@@ -286,32 +282,33 @@ ammonium_permute_plots <- permute_data_analytics(data = nutrients_meta_dist,
 # 5. Stable isotopes analysis ---------------------------------------------
 
 # Join stable isotope data with metadata/distance and create custom metric
-stable_isotopes_meta_dist <- full_join(x = stable_isotopes, y = metadata_dist,
+stable_isotopes_meta_dist <- inner_join(x = stable_isotopes, y = metadata_dist,
                                        by = "site")
 
 # 5.1 N15 -----------------------------------------------------------------
 
 # Analyze N15 as a function of population intensity
 n15_PI_model <- lm((N15) ~ log10(distance_weighted_population),
-                   data = stable_isotopes_meta_dist[stable_isotopes$Genus != "Periphyton", ])
+                   data = stable_isotopes_meta_dist[stable_isotopes_meta_dist$Genus != "Periphyton", ])
 
 # View model results
 summary(n15_PI_model)
 
 # Plot linear model
-n15_PI_plot <- ggplot(data = stable_isotopes_meta_dist[stable_isotopes$Genus != "Periphyton", ],
+n15_PI_plot <- ggplot(data = stable_isotopes_meta_dist[stable_isotopes_meta_dist$Genus != "Periphyton", ],
                       aes(x = log10(distance_weighted_population), y = (N15))) +
   geom_point() +
   geom_smooth(method = "lm", se = TRUE) +
-  ylab(expression(paste("log10(",delta^{15}, "N (\u2030))"))) +
+  ylab(expression(paste(delta^{15}, "N (\u2030)"))) +
   xlab("log10(IDW Population)") +
   ggtitle(expression(paste(delta^{15}, "N \u2030  vs. IDW Population"))) +
-  xlim(c(2.75, 3.75)) +
-  annotate(geom = "label", x = 3.35, y = 6.5,
+  xlim(c(2.5, 3.75)) +
+  annotate(geom = "label", x = 3.35, y = 7.0,
            label = paste0("p-value: ",
                           round(summary(n15_PI_model)$coefficients[2, 4], 3),
                           "\nR-squared: ",
-                          round(summary(n15_PI_model)$r.squared, 3))) +
+                          round(summary(n15_PI_model)$r.squared, 3), 
+                          "\nN = ", nrow(stable_isotopes_meta_dist[stable_isotopes$Genus != "Periphyton", ]))) +
   theme_minimal()
 
 # Export plot
@@ -342,12 +339,13 @@ c13_PI_plot <- ggplot(stable_isotopes_meta_dist[stable_isotopes$Genus != "Periph
   ylab(expression(paste("log10(",delta^{13}, "C (\u2030))"))) +
   xlab("log10(IDW Population)") +
   ggtitle(expression(paste(delta^{13}, "C \u2030 vs. IDW Population"))) +
-  xlim(c(2.75, 3.75)) +
+  xlim(c(2.5, 3.75)) +
   annotate(geom = "label", x = 3.00, y = -17,
            label = paste0("p-value: ",
                           round(summary(c13_PI_model)$coefficients[2, 4], 3),
                           "\nR-squared: ",
-                          round(summary(c13_PI_model)$r.squared, 3))) +
+                          round(summary(c13_PI_model)$r.squared, 3), 
+                          "\nN = ", nrow(stable_isotopes_meta_dist[stable_isotopes$Genus != "Periphyton", ]))) +
   theme_minimal()
 
 # Export plot
@@ -386,7 +384,8 @@ chlorophylla_PI_plot <- ggplot(data = chlorophylla_meta_dist,
            label = paste0("p-value: ",
                           round(summary(chlorophylla_PI_model)$coefficients[2, 4], 3),
                           "\nR-squared: ",
-                          round(summary(chlorophylla_PI_model)$r.squared, 3))) +
+                          round(summary(chlorophylla_PI_model)$r.squared, 3), 
+                          "\nN = ", nrow(chlorophylla_meta_dist))) +
   theme_minimal()
 
 # Export plot
@@ -439,7 +438,8 @@ microplastics_total_PI_plot <- ggplot(data = microplastics_meta_dist,
            label = paste0("p-value: ",
                           round(summary(microplastics_total_PI_model)$coefficients[2, 4], 3),
                           "\nR-squared: ",
-                          round(summary(microplastics_total_PI_model)$r.squared, 3))) +
+                          round(summary(microplastics_total_PI_model)$r.squared, 3), 
+                          "\nN = ", nrow(microplastics_meta_dist))) +
   theme_minimal()
 
 # Export plot
@@ -476,7 +476,8 @@ microplastics_density_PI_plot <- ggplot(data = microplastics_meta_dist,
            label = paste0("p-value: ",
                           round(summary(microplastics_density_PI_model)$coefficients[2, 4], 3),
                           "\nR-squared: ",
-                          round(summary(microplastics_density_PI_model)$r.squared, 3))) +
+                          round(summary(microplastics_density_PI_model)$r.squared, 3), 
+                          "\nN = ", nrow(microplastics_meta_dist))) +
   theme_minimal()
 
 # Export plot
@@ -503,6 +504,6 @@ combined_permuted_plots <- c(ppcp_permute_plots, n15_permute_plots, phosphorus_p
                              nitrate_permute_plots, ammonium_permute_plots, microplastics_total_permute_plots, 
                              microplastics_density_permute_plots)
 
-ggarrange(plotlist =  combined_permuted_plots, ncol = 3, nrow = 8) %>%
+ggarrange(plotlist =  combined_permuted_plots, ncol = 2, nrow = 8) %>%
   ggexport(filename = "../figures/permuted_combined_plot.png",
-           height = 1900, width = 1200, res = 120)
+           height = 1900, width = 1600, res = 120)

@@ -73,10 +73,10 @@ write.csv(x = ppcp_formatted, file = "../tables/ppcp.csv",
 # 4. Nutrients table ------------------------------------------------------
 
 nutrients_formatted <- nutrients %>%
-  select(-mean_tp_mg_dm3) %>%
+  select(-mean_tpo43_mg_dm3) %>%
   rename(NH4_mg_dm3 = mean_nh4_mg_dm3,
          NO3_mg_dm3 = mean_no3_mg_dm3,
-         PO4_mg_dm3 = mean_tpo43_mg_dm3)
+         TP_mg_dm3 = mean_tp_mg_dm3)
 
 write.csv(x = nutrients_formatted, file = "../tables/nutrients.csv",
           row.names = FALSE)

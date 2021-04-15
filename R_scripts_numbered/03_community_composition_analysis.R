@@ -403,7 +403,7 @@ invertebrate_well_preserved_plot <- invertebrates_well_preserved_long_ordered %>
            stat = "identity") +
   scale_fill_viridis_d(option = "inferno") +
   facet_wrap(~ Genus) +
-  xlab("Site (Arranged by increasing population intensity)") +
+  xlab("Site (Arranged by increasing IDW population)") +
   ylab("Number of Individuals") +
   theme_classic() +
   theme(legend.position = "none",
