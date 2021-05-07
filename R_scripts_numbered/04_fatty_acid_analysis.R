@@ -100,7 +100,7 @@ permute_data_analytics <- function(data, metric, full_model, metric_plot_title, 
 fatty_acid <- read.csv(file = "../cleaned_data/fatty_acid.csv",
                        header = TRUE, stringsAsFactors = FALSE)
 
-metadata <- read.csv(file = "../cleaned_data/metadata.csv",
+site_information <- read.csv(file = "../cleaned_data/site_information.csv",
                      header = TRUE, stringsAsFactors = FALSE)
 
 distance <- read.csv(file = "../cleaned_data/distance_weighted_population_metrics.csv",
@@ -109,14 +109,14 @@ distance <- read.csv(file = "../cleaned_data/distance_weighted_population_metric
 nutrients <- read.csv(file = "../cleaned_data/nutrients.csv",
                       header = TRUE, stringsAsFactors = FALSE)
 
-metadata_dist <- full_join(x = metadata, y = distance)
+site_info_dist <- full_join(x = site_information, y = distance)
 
 ppcp <- read.csv(file = "../cleaned_data/ppcp.csv",
                  header = TRUE, stringsAsFactors = FALSE)
 
-ppcp_meta_dist <- full_join(x = ppcp, y = metadata_dist, by = c("site"))
+ppcp_site_info_dist <- full_join(x = ppcp, y = site_info_dist, by = c("site"))
 
-fatty_acid_ppcp_meta_dist <- inner_join(x = fatty_acid, y = ppcp_meta_dist,
+fatty_acid_ppcp_site_info_dist <- inner_join(x = fatty_acid, y = ppcp_site_info_dist,
                                         by = c("site")) %>%
   unite(taxon, c("Genus", "Species"), remove = FALSE)
 
@@ -315,7 +315,7 @@ ggsave(filename = "all_species_essential_FA.png", plot = nmds, device = "png",
 # 3. Correlating fatty acids with sewage ----------------------------------
 
 # Create proportions of each fatty acid in the dataset
-fatty_acid_prop_ppcp_meta_dist <- fatty_acid_ppcp_meta_dist %>%
+fatty_acid_prop_ppcp_site_info_dist <- fatty_acid_ppcp_site_info_dist %>%
   gather(key = fatty_acid, value = concentration, c12_0:c24_0) %>%
   group_by(site, Genus, Species) %>%
   mutate(total_fatty_acid = sum(concentration),
@@ -327,17 +327,17 @@ fatty_acid_prop_ppcp_meta_dist <- fatty_acid_ppcp_meta_dist %>%
 
 # First compare essential fatty acid ratios in periphyton with total PPCP concentration
 peri_ppcp_lm <- lm((c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c14_0 + c16_0)  ~ log10(ppcp_sum),
-                   data = filter(fatty_acid_prop_ppcp_meta_dist, Genus == "Periphyton"))
+                   data = filter(fatty_acid_prop_ppcp_site_info_dist, Genus == "Periphyton"))
 
 summary(peri_ppcp_lm)
 
 # Also compare essential fatty acid ratios in periphyton with IDW population
 peri_pop_lm <- lm((c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c14_0 + c16_0)  ~ log10(distance_weighted_population),
-                   data = filter(fatty_acid_prop_ppcp_meta_dist, Genus == "Periphyton"))
+                   data = filter(fatty_acid_prop_ppcp_site_info_dist, Genus == "Periphyton"))
 
 summary(peri_pop_lm)
 
-peri_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_dist %>%
+peri_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_site_info_dist %>%
                                                  ungroup() %>%
                                                  filter(Genus == "Periphyton") %>%
                                                  mutate(fil_diatom_fa_ratio = (c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c14_0 + c16_0)), 
@@ -346,7 +346,7 @@ peri_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_
                                                full_model = peri_ppcp_lm, 
                                                predictor = "ppcp")
 
-peri_pop_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_dist %>%
+peri_pop_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_site_info_dist %>%
                                                  ungroup() %>%
                                                  filter(Genus == "Periphyton") %>%
                                                  mutate(fil_diatom_fa_ratio = (c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c14_0 + c16_0)), 
@@ -358,7 +358,7 @@ peri_pop_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_d
 # Second compare essential fatty acid ratios in E. verrucosus with total PPCP conentration
 eulimnogammarus_verrucosus_ppcp_lm <- 
   lm((c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c14_0 + c16_0) ~ log10(ppcp_sum),
-     data = filter(fatty_acid_prop_ppcp_meta_dist, 
+     data = filter(fatty_acid_prop_ppcp_site_info_dist, 
                    taxon == "Eulimnogammarus_verrucosus"))
 
 summary(eulimnogammarus_verrucosus_ppcp_lm)
@@ -366,12 +366,12 @@ summary(eulimnogammarus_verrucosus_ppcp_lm)
 # Next compare essential fatty acid ratios in E. verrucosus with IDW population
 eulimnogammarus_verrucosus_pop_lm <- 
   lm((c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c14_0 + c16_0) ~ log10(distance_weighted_population),
-     data = filter(fatty_acid_prop_ppcp_meta_dist, 
+     data = filter(fatty_acid_prop_ppcp_site_info_dist, 
                    taxon == "Eulimnogammarus_verrucosus"))
 
 summary(eulimnogammarus_verrucosus_pop_lm)
 
-eulimnogammarus_verrucosus_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_dist %>%
+eulimnogammarus_verrucosus_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_site_info_dist %>%
                                                  ungroup() %>%
                                                  filter(taxon == "Eulimnogammarus_verrucosus") %>%
                                                  mutate(fil_diatom_fa_ratio = (c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c14_0 + c16_0)), 
@@ -380,7 +380,7 @@ eulimnogammarus_verrucosus_ppcp_lm_permute <- permute_data_analytics(data = fatt
                                                full_model = eulimnogammarus_verrucosus_ppcp_lm, 
                                                predictor = "ppcp")
 
-eulimnogammarus_verrucosus_pop_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_dist %>%
+eulimnogammarus_verrucosus_pop_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_site_info_dist %>%
                                                                        ungroup() %>%
                                                                        filter(taxon == "Eulimnogammarus_verrucosus") %>%
                                                                        mutate(fil_diatom_fa_ratio = (c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c14_0 + c16_0)), 
@@ -392,19 +392,19 @@ eulimnogammarus_verrucosus_pop_lm_permute <- permute_data_analytics(data = fatty
 # Third compare essential fatty acid ratios in E. vittatus  with total PPCP conentration
 eulimnogammarus_vittatus_ppcp_lm <- 
   lm((c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c14_0 + c16_0) ~ log10(ppcp_sum),
-     data = filter(fatty_acid_prop_ppcp_meta_dist, 
+     data = filter(fatty_acid_prop_ppcp_site_info_dist, 
                    taxon == "Eulimnogammarus_vittatus"))
 
 summary(eulimnogammarus_vittatus_ppcp_lm)
 
 eulimnogammarus_vittatus_pop_lm <- 
   lm((c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c14_0 + c16_0) ~ log10(distance_weighted_population),
-     data = filter(fatty_acid_prop_ppcp_meta_dist, 
+     data = filter(fatty_acid_prop_ppcp_site_info_dist, 
                    taxon == "Eulimnogammarus_vittatus"))
 
 summary(eulimnogammarus_vittatus_pop_lm)
 
-eulimnogammarus_vittatus_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_dist %>%
+eulimnogammarus_vittatus_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_site_info_dist %>%
                                                                        ungroup() %>%
                                                                        filter(taxon == "Eulimnogammarus_vittatus") %>%
                                                                        mutate(fil_diatom_fa_ratio = (c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c14_0 + c16_0)), 
@@ -413,7 +413,7 @@ eulimnogammarus_vittatus_ppcp_lm_permute <- permute_data_analytics(data = fatty_
                                                                      full_model = eulimnogammarus_vittatus_ppcp_lm, 
                                                                      predictor = "ppcp")
 
-eulimnogammarus_vittatus_pop_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_dist %>%
+eulimnogammarus_vittatus_pop_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_site_info_dist %>%
                                                                     ungroup() %>%
                                                                     filter(taxon == "Eulimnogammarus_vittatus") %>%
                                                                     mutate(fil_diatom_fa_ratio = (c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c14_0 + c16_0)), 
@@ -448,7 +448,7 @@ labels <- data.frame(taxon, p_values, r_squared, n_samps) %>%
 
 # This figure is Figure 7 within the body of the associated manuscript.
 
-ppcp_filamentous_diatom_fa_plot <- fatty_acid_prop_ppcp_meta_dist %>%
+ppcp_filamentous_diatom_fa_plot <- fatty_acid_prop_ppcp_site_info_dist %>%
     filter(taxon %in% c("Eulimnogammarus_verrucosus", "Eulimnogammarus_vittatus",
                         "Periphyton_NA")) %>%
     mutate(taxon = ifelse(test = taxon == "Eulimnogammarus_verrucosus",
@@ -505,7 +505,7 @@ labels <- data.frame(taxon, p_values, r_squared, n_samps) %>%
 
 # This figure is Figure 7 within the body of the associated manuscript.
 
-pop_filamentous_diatom_fa_plot <- fatty_acid_prop_ppcp_meta_dist %>%
+pop_filamentous_diatom_fa_plot <- fatty_acid_prop_ppcp_site_info_dist %>%
   filter(taxon %in% c("Eulimnogammarus_verrucosus", "Eulimnogammarus_vittatus",
                       "Periphyton_NA")) %>%
   mutate(taxon = ifelse(test = taxon == "Eulimnogammarus_verrucosus",
@@ -545,17 +545,17 @@ ggsave(filename = "pop_filamentous_diatom_fa_plot.png", plot =  pop_filamentous_
 
 # First compare essential fatty acid ratios in periphyton with total PPCP concentration
 peri_ppcp_lm <- lm(((c18_3w3 + c18_2w6) / (c20_5w3)) ~ log10(ppcp_sum),
-               data = filter(fatty_acid_prop_ppcp_meta_dist, Genus == "Periphyton"))
+               data = filter(fatty_acid_prop_ppcp_site_info_dist, Genus == "Periphyton"))
 
 summary(peri_ppcp_lm)
 
 # Next compare essential fatty acid ratios in periphyton with IDW population
 peri_pop_lm <- lm(((c18_3w3 + c18_2w6) / (c20_5w3)) ~ log10(distance_weighted_population),
-                   data = filter(fatty_acid_prop_ppcp_meta_dist, Genus == "Periphyton"))
+                   data = filter(fatty_acid_prop_ppcp_site_info_dist, Genus == "Periphyton"))
 
 summary(peri_pop_lm)
 
-peri_efa_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_dist %>%
+peri_efa_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_site_info_dist %>%
                                                  ungroup() %>%
                                                  filter(Genus == "Periphyton") %>%
                                                  mutate(fil_diatom_fa_ratio = (c18_3w3 + c18_2w6) / (c20_5w3)), 
@@ -564,7 +564,7 @@ peri_efa_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_m
                                                full_model = peri_ppcp_lm, 
                                                predictor = "ppcp")
 
-peri_efa_pop_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_dist %>%
+peri_efa_pop_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_site_info_dist %>%
                                                      ungroup() %>%
                                                      filter(Genus == "Periphyton") %>%
                                                      mutate(fil_diatom_fa_ratio = (c18_3w3 + c18_2w6) / (c20_5w3)), 
@@ -575,19 +575,19 @@ peri_efa_pop_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_me
 
 # Second compare essential fatty acid ratios in E. verrucosus with total PPCP conentration
 eulimnogammarus_verrucosus_ppcp_lm <- lm(((c18_3w3 + c18_2w6) / (c20_5w3)) ~ log10(ppcp_sum),
-                                         data = filter(fatty_acid_prop_ppcp_meta_dist, 
+                                         data = filter(fatty_acid_prop_ppcp_site_info_dist, 
                                                        taxon == "Eulimnogammarus_verrucosus"))
 
 summary(eulimnogammarus_verrucosus_ppcp_lm)
 
 # Second compare essential fatty acid ratios in E. verrucosus with IDW Population
 eulimnogammarus_verrucosus_pop_lm <- lm(((c18_3w3 + c18_2w6) / (c20_5w3)) ~ log10(distance_weighted_population),
-                                         data = filter(fatty_acid_prop_ppcp_meta_dist, 
+                                         data = filter(fatty_acid_prop_ppcp_site_info_dist, 
                                                        taxon == "Eulimnogammarus_verrucosus"))
 
 summary(eulimnogammarus_verrucosus_pop_lm)
 
-eulimnogammarus_verrucosus_efa_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_dist %>%
+eulimnogammarus_verrucosus_efa_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_site_info_dist %>%
                                                                        ungroup() %>%
                                                                        filter(taxon == "Eulimnogammarus_verrucosus") %>%
                                                                        mutate(fil_diatom_fa_ratio = (c18_3w3 + c18_2w6) / (c20_5w3)), 
@@ -596,7 +596,7 @@ eulimnogammarus_verrucosus_efa_ppcp_lm_permute <- permute_data_analytics(data = 
                                                                      full_model = eulimnogammarus_verrucosus_ppcp_lm, 
                                                                      predictor = "ppcp")
 
-eulimnogammarus_verrucosus_efa_pop_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_dist %>%
+eulimnogammarus_verrucosus_efa_pop_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_site_info_dist %>%
                                                                            ungroup() %>%
                                                                            filter(taxon == "Eulimnogammarus_verrucosus") %>%
                                                                            mutate(fil_diatom_fa_ratio = (c18_3w3 + c18_2w6) / (c20_5w3)), 
@@ -607,19 +607,19 @@ eulimnogammarus_verrucosus_efa_pop_lm_permute <- permute_data_analytics(data = f
 
 # Third compare essential fatty acid ratios in E. vittatus  with total PPCP conentration
 eulimnogammarus_vittatus_ppcp_lm <- lm(((c18_3w3 + c18_2w6) / (c20_5w3)) ~ log10(ppcp_sum),
-                                         data = filter(fatty_acid_prop_ppcp_meta_dist, 
+                                         data = filter(fatty_acid_prop_ppcp_site_info_dist, 
                                                        taxon == "Eulimnogammarus_vittatus"))
 
 summary(eulimnogammarus_vittatus_ppcp_lm)
 
 # Next compare essential fatty acid ratios in E. vittatus  with IDW population
 eulimnogammarus_vittatus_pop_lm <- lm(((c18_3w3 + c18_2w6) / (c20_5w3)) ~ log10(distance_weighted_population),
-                                       data = filter(fatty_acid_prop_ppcp_meta_dist, 
+                                       data = filter(fatty_acid_prop_ppcp_site_info_dist, 
                                                      taxon == "Eulimnogammarus_vittatus"))
 
 summary(eulimnogammarus_vittatus_pop_lm)
 
-eulimnogammarus_vittatus_efa_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_dist %>%
+eulimnogammarus_vittatus_efa_ppcp_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_site_info_dist %>%
                                                                     ungroup() %>%
                                                                     filter(taxon == "Eulimnogammarus_vittatus") %>%
                                                                     mutate(fil_diatom_fa_ratio = (c18_3w3 + c18_2w6) / (c20_5w3)), 
@@ -628,7 +628,7 @@ eulimnogammarus_vittatus_efa_ppcp_lm_permute <- permute_data_analytics(data = fa
                                                                   full_model = eulimnogammarus_vitatus_ppcp_lm, 
                                                                   predictor = "ppcp")
 
-eulimnogammarus_vittatus_efa_pop_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_meta_dist %>%
+eulimnogammarus_vittatus_efa_pop_lm_permute <- permute_data_analytics(data = fatty_acid_prop_ppcp_site_info_dist %>%
                                                                          ungroup() %>%
                                                                          filter(taxon == "Eulimnogammarus_vittatus") %>%
                                                                          mutate(fil_diatom_fa_ratio = (c18_3w3 + c18_2w6) / (c20_5w3)), 
@@ -661,7 +661,7 @@ labels <- data.frame(taxon, p_values, r_squared, n_samps) %>%
                         "<br> N = ", n_samps))
 
 # This figure is Figure 7 within the body of the associated manuscript.
-ppcp_efa_plot <- fatty_acid_prop_ppcp_meta_dist %>%
+ppcp_efa_plot <- fatty_acid_prop_ppcp_site_info_dist %>%
   filter(taxon %in% c("Eulimnogammarus_verrucosus", "Eulimnogammarus_vittatus",
                       "Periphyton_NA")) %>%
   mutate(taxon = ifelse(test = taxon == "Eulimnogammarus_verrucosus",
@@ -714,7 +714,7 @@ labels <- data.frame(taxon, p_values, r_squared, n_samps) %>%
 
 # This figure is Figure 7 within the body of the associated manuscript.
 
-pop_efa_plot <- fatty_acid_prop_ppcp_meta_dist %>%
+pop_efa_plot <- fatty_acid_prop_ppcp_site_info_dist %>%
   filter(taxon %in% c("Eulimnogammarus_verrucosus", "Eulimnogammarus_vittatus",
                       "Periphyton_NA")) %>%
   mutate(taxon = ifelse(test = taxon == "Eulimnogammarus_verrucosus",
@@ -836,11 +836,11 @@ write.csv(x = complete_fatty_acid_repo,
 
 # 4.2 Create table of mean fatty acid proportions -------------------------
 
-sample_count <- fatty_acid_ppcp_meta_dist %>% 
+sample_count <- fatty_acid_ppcp_site_info_dist %>% 
   group_by(Genus, Species) %>% 
   count()
 
-fatty_acid_type_props_summary_table <- fatty_acid_prop_ppcp_meta_dist %>%
+fatty_acid_type_props_summary_table <- fatty_acid_prop_ppcp_site_info_dist %>%
   gather(fatty_acid, fa_prop, a_15_0:i_17_0) %>%
   mutate(fatty_acid_type = ifelse(fatty_acid %in% safa, "SAFA", "Branched"),
          fatty_acid_type = ifelse(fatty_acid %in% mufa, "MUFA", fatty_acid_type),
@@ -863,7 +863,7 @@ write.csv(x = fatty_acid_type_props_summary_table,
 
 # 4.3 plot of fatty acid proportions over PPCP concentration --------------
 
-fatty_acid_type_props_plot <- fatty_acid_prop_ppcp_meta_dist %>%
+fatty_acid_type_props_plot <- fatty_acid_prop_ppcp_site_info_dist %>%
   gather(fatty_acid, fa_prop, a_15_0:i_17_0) %>%
   mutate(fatty_acid_type = ifelse(fatty_acid %in% safa, "SAFA", "Branched"),
          fatty_acid_type = ifelse(fatty_acid %in% mufa, "MUFA", fatty_acid_type),
@@ -906,7 +906,7 @@ ggsave(filename = "fatty_acid_type_props_plot.png", plot = fatty_acid_type_props
 
 # 5.1 Primary producer analysis -------------------------------------------
 
-periphyton_fatty_acids <- fatty_acid_prop_ppcp_meta_dist %>%
+periphyton_fatty_acids <- fatty_acid_prop_ppcp_site_info_dist %>%
   filter(Genus %in% c("Periphyton", "Draparnaldia")) %>%
   select(site:distance_weighted_population, c18_3w3, c16_0, c18_1w9, c18_2w6, 
          c16_1w7, c20_5w3, c14_0)
@@ -966,7 +966,7 @@ ggsave(filename = "filamentous_diatom_nmds_peri_draparnaldia.png", plot = nmds, 
 
 # 5.2 Macroinvertebrate analysis ------------------------------------------
 
-invert_fatty_acids <- fatty_acid_prop_ppcp_meta_dist %>%
+invert_fatty_acids <- fatty_acid_prop_ppcp_site_info_dist %>%
   filter(!(Genus %in% c("Draparnaldia", "Periphyton", "Snail", "Hyalella"))) %>%
   select(site:distance_weighted_population, c18_3w3, c16_0, c18_1w9, c18_2w6,  
          c16_1w7, c20_5w3, c14_0)

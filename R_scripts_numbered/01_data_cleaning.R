@@ -70,19 +70,19 @@ write.csv(x = chlorophylla, file = "../cleaned_data/chlorophylla.csv",
           row.names = FALSE)
 
 
-# 4. Load and clean lat/long metadata -------------------------------------
+# 4. Load and clean lat/long site information  -------------------------------------
 
-metadata_orig <- read.csv(file = "../clean_disaggregated_data/metadata.csv",
+site_information_orig <- read.csv(file = "../clean_disaggregated_data/site_information.csv",
                           header = TRUE)
 
 # Select columns of interest
-metadata <- metadata_orig %>%
+site_information <- site_information_orig %>%
   select(site, lat, long, depth_m, distance_to_shore_m, air_temp_celsius, 
          surface_temp_celsius, mid_temp_celsius, bottom_temp_celsius) 
 
-head(metadata)
+head(site_information)
 
-write.csv(x = metadata, file = "../cleaned_data/metadata.csv",
+write.csv(x = site_information, file = "../cleaned_data/site_information.csv",
           row.names = FALSE)
 
 

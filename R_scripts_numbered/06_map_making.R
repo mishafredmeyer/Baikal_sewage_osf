@@ -25,13 +25,13 @@ if (!dir.exists(output_dir)){
 
 # Step 1: Import data and join datasets -----------------------------------
 
-metadata <- read.csv(file = "../cleaned_data/metadata.csv",
+site_information <- read.csv(file = "../cleaned_data/site_information.csv",
                           stringsAsFactors = FALSE)
 
 distance <- read.csv(file = "../cleaned_data/distance_weighted_population_metrics.csv",
                      header = TRUE, stringsAsFactors = FALSE)
 
-sample_points <- full_join(x = metadata,
+sample_points <- full_join(x = site_information,
                            y = distance,
                            by = c("site"))
 

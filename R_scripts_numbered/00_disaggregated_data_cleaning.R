@@ -100,13 +100,19 @@ write.csv(x = chlorophylla, file = "../clean_disaggregated_data/chlorophylla.csv
           row.names = FALSE)
 
 
-# 4. Load and clean lat/long metadata -------------------------------------
+# 4. Load and clean lat/long site information -------------------------------------
 
-metadata_orig <- read.csv(file = "../original_data/baikal_nearshore_metadata_201508.csv",
+# Originally the authors intended for the "metadata" to refer to metadata for each site.
+# During peer-review, a reviewer suggested renaming metdata as "site_information" and we 
+# agree that this change could prevent confusion. We have maintained metadata in the original
+# site information metadata file "baikal_nearshore_metadata_201508.csv" as this is how we 
+# originally named the file during the August 2015 field season. 
+
+site_information_orig <- read.csv(file = "../original_data/baikal_nearshore_metadata_201508.csv",
                           header = TRUE)
 
 # Select columns of interest
-metadata <- metadata_orig %>%
+site_information <- site_information_orig %>%
   rename(common_locaiton = location,
          local_site = site,
          site = loc_site,
@@ -121,9 +127,9 @@ metadata <- metadata_orig %>%
          air_temp_celsius, surface_temp_celsius, mid_temp_celsius, bottom_temp_celsius, 
          comments, shore_photo, substrate_photo, sponges, brandtia)
 
-head(metadata)
+head(site_information)
 
-write.csv(x = metadata, file = "../clean_disaggregated_data/metadata.csv",
+write.csv(x = site_information, file = "../clean_disaggregated_data/site_information.csv",
           row.names = FALSE)
 
 
@@ -380,13 +386,13 @@ write.csv(x = microplastics, file = "../clean_disaggregated_data/microplastics.c
 
 # 11. Load and clean calculated distance metrics --------------------------
 
-# Load the shapefiles and metadata containing information of the development
+# Load the shapefiles and site information for the development
 # polygons and the lake shorelines.
 
 baikal_shapefile <- sf::st_read(dsn = "../original_data/Baikal_shapefile.kml")
 
 
-metadata <- read.csv(file = "../clean_disaggregated_data/metadata.csv",
+site_information <- read.csv(file = "../clean_disaggregated_data/site_information.csv",
                      header = TRUE, stringsAsFactors = FALSE)
 
 
@@ -438,8 +444,8 @@ loc_shoreline_area_length <- baikal_shapefile %>%
 baikal_shapefile$centroids <- st_centroid(x = baikal_shapefile)
 
 
-# Convert metadata into a spatial object 
-site_loc <- metadata %>%
+# Convert site information into a spatial object 
+site_loc <- site_information %>%
   dplyr::select(site, lat, long)
 
 site_loc_pts <- st_as_sf(site_loc[, 2:3], coords = c("long", "lat"),
