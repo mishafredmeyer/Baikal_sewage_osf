@@ -1281,6 +1281,7 @@ ggsave(filename = "fa_ppcp_mixsiar_results.png", plot = arranged_plots, device =
 
 # 6.5.1: 5% increase ------------------------------------------------------
 
+# Test case for 50% increase
 tdf_fifty_percent <- read.csv(file = "../cleaned_data/tdf_formatted.csv") %>%
   pivot_longer(cols = c(Meanc14_0:SDc22_6w3), names_to = "fatty_acid", values_to = "prop") %>%
   mutate(prop = ifelse(grepl(pattern = "SD", x = fatty_acid, ), prop*2, prop)) %>%
