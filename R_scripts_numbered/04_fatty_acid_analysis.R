@@ -1226,7 +1226,7 @@ p_outputs <- data.frame(jags.1$BUGSoutput$sims.list$p.global) %>%
          resources = gsub(pattern = "Ulothrix", replacement = "*Ulothrix spp.*", x = resources))
 
 
-poster_plot <- ggplot(p_outputs) +
+posterior_plot <- ggplot(p_outputs) +
   geom_density(aes(x = posteriors, y = ..scaled.., fill = resources, color = resources), alpha = 0.65) +
   scale_fill_manual(values = viridis(30)[c(15, 22, 28)], name = "Resources") +
   scale_color_manual(values = viridis(30)[c(15, 22, 28)], name = "Resources") +
@@ -1243,13 +1243,29 @@ poster_plot <- ggplot(p_outputs) +
         legend.key.height = unit(0.5, "in"),
         legend.key.width = unit(0.25, "in"))
 
-ggsave(filename = "mixsiar_posterior_results.png", plot = poster_plot, device = "png", 
+posterior_boxplot <- ggplot(p_outputs) +
+  geom_violin(aes(x = resources, y = posteriors), alpha = 0.65, fill = "grey70") +
+  geom_boxplot(aes(x = resources, y = posteriors), 
+               alpha = 0.65, width = 0.2, outlier.alpha = 0) +
+  ggtitle("Posterior Density Plot of Diet Proportions ") +
+  scale_y_continuous(expand = c(0, 0), limits = c(0,1)) +
+  ylab("Proportion of diet") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        title = element_text(size = 20),
+        axis.text.x = element_markdown(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.title = element_text(size = 20),
+        axis.title.x = element_blank(),
+        legend.text = element_markdown(size = 16))
+
+ggsave(filename = "mixsiar_posterior_results.png", plot = posterior_plot, device = "png", 
        path = "../figures/", width = 8, height = 6, units = "in")
 
 
 arranged_plots <- ggarrange(ggarrange(ppcp_filamentous_diatom_fa_plot, ppcp_efa_plot, ncol = 1, nrow = 2, 
                                       labels = c("A", "B"), font.label = list(size = 20, face = "bold")),
-                            poster_plot, ncol = 2, labels = c(NA, "C"), 
+                            posterior_plot, ncol = 2, labels = c(NA, "C"), 
                             font.label = list(size = 20, face = "bold"), widths = c(1.4, 1))
 
 ggsave(filename = "fa_ppcp_mixsiar_results.png", plot = arranged_plots, device = "png", 
