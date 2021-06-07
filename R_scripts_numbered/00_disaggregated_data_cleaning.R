@@ -256,7 +256,8 @@ stable_isotopes <- stable_isotopes_orig %>%
          Species = ifelse(test = Species == "cyan",
                           yes = "cyaneus", no = Species),
          Species = ifelse(test = Species == "zone",
-                          yes = NA, no = Species))
+                          yes = NA, no = Species)) %>%
+  select(site, Genus, Species, C13, N15, comments)
 
 head(stable_isotopes)
 

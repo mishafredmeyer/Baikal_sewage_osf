@@ -188,9 +188,12 @@ species_scores$species <- rownames(species_scores)
 # This figure is associated with figure S1 in the associated manuscript
 nmds <- ggplot() +
   geom_point(data = data_scores %>%
-             mutate(taxon = ifelse(taxon %in% c(amphipods, "Draparnaldia spp."),
-                              yes = paste0("*", taxon, "*"),
-                              no = taxon)), 
+             mutate(taxon = ifelse(taxon == "Draparnaldia spp.",
+                              yes = "*Draparnaldia* spp.",
+                              no = taxon), 
+                    taxon = ifelse(taxon %in% amphipods,
+                            yes = paste0("*", taxon, "*"),
+                            no = taxon)),
              mapping = aes(x = NMDS1, y = NMDS2, fill = taxon),
              size = 10, alpha = .6, shape = 21, stroke = 2, color = "grey60") +
   scale_fill_viridis_d(option = "plasma") +
@@ -209,7 +212,6 @@ nmds <- ggplot() +
                                           x = species)), 
                   aes(x = NMDS1, y = NMDS2, label = species),
                   size = 10) +
-  ggtitle("NMDS with Entire FA Spectrum") +
   annotate("label", x = 0.4, y = 0.45,
            label = paste("Stress: ", round(whole_fatty_acid_metaMDS$stress, digits = 3)),
            size = 10) +
@@ -278,11 +280,14 @@ species_scores$species <- rownames(species_scores)
 # This plot is figure S2 in the associated ms.
 nmds <- ggplot() +
   geom_point(data = data_scores %>%
-               mutate(taxon = ifelse(taxon %in% c(amphipods, "Draparnaldia spp."),
+               mutate(taxon = ifelse(taxon == "Draparnaldia spp.",
+                                     yes = "*Draparnaldia* spp.",
+                                     no = taxon), 
+                      taxon = ifelse(taxon %in% amphipods,
                                      yes = paste0("*", taxon, "*"),
-                                     no = taxon)), 
+                                     no = taxon)),
              mapping = aes(x = NMDS1, y = NMDS2, fill = taxon),
-             size = 10, alpha = .75, shape = 21, stroke = 2, color = "grey70") +
+             size = 10, alpha = .6, shape = 21, stroke = 2, color = "grey70") +
   scale_fill_viridis_d(option = "plasma") +
   geom_text_repel(data = species_scores %>%
                     filter(species %in% c("c18_3w3", "c18_2w6", "c20_5w3")) %>%
@@ -294,7 +299,6 @@ nmds <- ggplot() +
                                           x = species)), 
                   aes(x = NMDS1, y = NMDS2, label = species),
                   size = 10) +
-  ggtitle("NMDS with Essential FA Spectrum") +
   annotate("label", x = -0.5, y = 0.35,
            label = paste("Stress: ",
                          round(essential_fatty_acid_metaMDS$stress, digits = 3)),
@@ -872,8 +876,8 @@ fatty_acid_type_props_plot <- fatty_acid_prop_ppcp_site_info_dist %>%
   mutate(taxon = gsub(pattern = "_", replacement = " ", x = taxon),
          taxon = gsub(pattern = "NA", replacement = "", x = taxon),
          taxon = ifelse(test = grepl(pattern = "Draparnaldia", x = taxon),
-                        yes = "Draparnaldia spp.", no = taxon),
-         taxon = ifelse(test = !taxon %in% c("Periphyton ", "Snail "),
+                        yes = "*Draparnaldia* spp.", no = taxon),
+         taxon = ifelse(test = !taxon %in% c("Periphyton ", "Snail ", "*Draparnaldia* spp."),
                         yes = paste0("*", taxon, "*"), no = taxon)) %>%
   select(site, ppcp_sum, distance_weighted_population, taxon, 
          Genus, Species, fatty_acid_type, fa_prop) %>%
@@ -919,7 +923,7 @@ data_scores <- as.data.frame(scores(peri_nmds)) %>%
          taxon = periphyton_fatty_acids$taxon,
          taxon = gsub(pattern = "_", replacement = " ", x = taxon),
          taxon = gsub(pattern = "NA", replacement = "", x = taxon),
-         taxon = gsub(pattern = "Draparnaldia", replacement = "*Draparnaldia spp.*", x = taxon),
+         taxon = gsub(pattern = "Draparnaldia", replacement = "*Draparnaldia* spp.", x = taxon),
          ppcp_sum = periphyton_fatty_acids$ppcp_sum)
 
 species_scores <- as.data.frame(scores(peri_nmds, display = "species"))
@@ -943,7 +947,6 @@ nmds <- ggplot() +
                   size = 10, segment.size = NA) +
   scale_size_continuous(name = "[Total PPCP]", range = c(10, 30)) +
   guides(shape = guide_legend(override.aes = list(size=10))) + 
-  ggtitle("NMDS with Filamentous:Diatom Fatty Acids") +
   ylab("") + 
   ylim(c(0,1.25)) +
   annotate("label", x = 0, y = 0.25,
@@ -1003,7 +1006,6 @@ nmds <- ggplot() +
                   size = 10, segment.size = NA) +
   scale_size_continuous(name = "[Total PPCP]", range = c(10,30)) +
   guides(shape = guide_legend(override.aes = list(size=10))) + 
-  ggtitle("NMDS with Filamentous:Diatom Fatty Acids") +
   annotate("label", x = 0.2, y = 0.2,
            label = paste("Stress: ", round(invert_nmds$stress, digits = 3)),
            size = 10) +
@@ -1222,8 +1224,8 @@ p_outputs <- data.frame(jags.1$BUGSoutput$sims.list$p.global) %>%
          "Draparnaldia" = X2,
          "Ulothrix" = X3) %>%
   pivot_longer(cols = c(Diatom:Ulothrix), names_to = "resources", values_to = "posteriors") %>%
-  mutate(resources = gsub(pattern = "Draparnaldia", replacement = "*Draparnaldia spp.*", x = resources),
-         resources = gsub(pattern = "Ulothrix", replacement = "*Ulothrix spp.*", x = resources))
+  mutate(resources = gsub(pattern = "Draparnaldia", replacement = "*Draparnaldia* spp.", x = resources),
+         resources = gsub(pattern = "Ulothrix", replacement = "*Ulothrix* spp.", x = resources))
 
 
 posterior_plot <- ggplot(p_outputs) +
@@ -1348,8 +1350,8 @@ p_outputs <- data.frame(jags.1$BUGSoutput$sims.list$p.global) %>%
          "Draparnaldia" = X2,
          "Ulothrix" = X3) %>%
   pivot_longer(cols = c(Diatom:Ulothrix), names_to = "resources", values_to = "posteriors") %>%
-  mutate(resources = gsub(pattern = "Draparnaldia", replacement = "*Draparnaldia spp.*", x = resources),
-         resources = gsub(pattern = "Ulothrix", replacement = "*Ulothrix spp.*", x = resources))
+  mutate(resources = gsub(pattern = "Draparnaldia", replacement = "*Draparnaldia* spp.", x = resources),
+         resources = gsub(pattern = "Ulothrix", replacement = "*Ulothrix* spp.", x = resources))
 
 
 poster_plot_five_percent <- ggplot(p_outputs) +
