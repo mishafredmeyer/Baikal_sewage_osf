@@ -1,6 +1,12 @@
-# This script aggregates stable isotopes with sewage
-# indicator data in Lake Baikal to produce a stable isotope
-# biplot for the associated manuscript. 
+# This script performs two food web inferences studies using 
+# stable isotopes and fatty acids. First the script aggregates 
+# stable isotopes with sewage indicator data in Lake Baikal to 
+# produce a stable isotope biplot for the associated manuscript. 
+# Second, the script performs a Bayesian mixing model using fatty acid 
+# data collected at Lake Baikal, already published fatty acid data for 
+# Lake Baikal primary producers, and antarctic amphipod trophic discrimination
+# factors (the most closely related taxa with publicly available data at the time
+# of this analysis). 
 
 library(tidyverse)
 library(viridis)

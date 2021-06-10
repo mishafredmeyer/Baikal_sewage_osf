@@ -27,16 +27,24 @@ if (!dir.exists(output_dir)){
 }
 
 # Here, we will define a function to perform a permutational analysis of the 
-# of the data. 
+# of the data. In general, this function permutes the response variable 5,000 times, 
+# creates a linear model with the permuted data, and extracts the p-value and R-squared 
+# value from the model. Once the interation is finished, the 5,000 p-values and R-squared
+# values are plotted on a histogram and compared to the model generated with non-permuted
+# data. 
 
 permute_data_analytics <- function(data, metric, full_model, metric_plot_title, log_transform_response = TRUE){
   for(i in 1:5000){
+    
+    # First permute the response variable. The variable is supplied by the user.
     permuted_data <- data %>%
       select(paste(metric)) %>%
       rename("permuted_metric" = paste(metric)) %>%
       sample_frac(size = 1) %>%
       cbind(., data)
     
+    # If the user has specified to log-transform the variable, this step will 
+    # actually perform the log-transform. 
     if(log_transform_response){
       permuted_model <- lm(log10(permuted_metric) ~ log10(distance_weighted_population),
                            data = permuted_data)
@@ -45,7 +53,9 @@ permute_data_analytics <- function(data, metric, full_model, metric_plot_title, 
                            data = permuted_data)
     }
     
-    
+    # If this iteration is the first, then function creates two repos for the 
+    # p-value and r-squared values. Note that this step requires the broom package
+    # be installed. 
     if(i == 1){
       glance_repo <- glance(permuted_model)
       tidy_repo <- tidy(permuted_model)
@@ -56,9 +66,11 @@ permute_data_analytics <- function(data, metric, full_model, metric_plot_title, 
     }
   }
   
+  # This step removes all intercept coefficients from the repo. 
   tidy_full_model <- tidy(full_model) %>%
     filter(term != "(Intercept)")
   
+  # This step plots the p-value histogram figure. 
   permuted_plot_pval <- ggplot() +
     geom_histogram(data = tidy_repo, 
                    mapping = aes(p.value), 
@@ -74,6 +86,7 @@ permute_data_analytics <- function(data, metric, full_model, metric_plot_title, 
     xlab("P-Value") +
     theme_minimal()
   
+  # This code chunk plots the histogram of the R-squared values. 
   permuted_plot_rsquared <- ggplot() +
     geom_histogram(data = glance_repo, 
                    mapping = aes(r.squared), 
@@ -90,6 +103,7 @@ permute_data_analytics <- function(data, metric, full_model, metric_plot_title, 
     theme_minimal() +
     theme(plot.title = element_markdown())
   
+  # The two resulting figures are returned as a list. 
   return(list(permuted_plot_pval, permuted_plot_rsquared))
 }
 
