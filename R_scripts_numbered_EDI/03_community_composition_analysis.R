@@ -40,23 +40,23 @@ invertebrates <- read.csv("../cleaned_data/invertebrates.csv",
 periphyton <- read.csv("../cleaned_data/periphyton.csv",
                        header = TRUE, stringsAsFactors = FALSE)
 
-# Site metadata
-metadata <- read.csv("../cleaned_data/metadata.csv",
+# Site information
+site_information <- read.csv("../cleaned_data/site_information.csv",
                      header = TRUE, stringsAsFactors = FALSE)
 
 # Site distance data
 distance <- read.csv("../cleaned_data/distance_weighted_population_metrics.csv",
                      header = TRUE, stringsAsFactors = FALSE)
 
-# Join site metadata with distance data
-metadata_dist <- full_join(x = metadata, y = distance, by = "site")
+# Join site site information with distance data
+site_info_dist <- full_join(x = site_information, y = distance, by = "site")
 
 # PPCP data
 ppcp <- read.csv("../cleaned_data/ppcp.csv",
                  header = TRUE, stringsAsFactors = FALSE)
 
-# Join PPCP data with metadata/distance and select sites of interest
-ppcp_meta_dist <- full_join(x = ppcp, y = metadata_dist, by = "site") %>%
+# Join PPCP data with site information/distance and select sites of interest
+ppcp_site_info_dist <- full_join(x = ppcp, y = site_info_dist, by = "site") %>%
   filter(!(site %in% c("OS-1", "OS-2", "OS-3")))
 
 
@@ -80,15 +80,15 @@ add_label <- function(xfrac, yfrac, label, pos = 4, ...) {
 
 # 3. Periphyton analysis ---------------------------------------------------
 
-# Join periphyton data with metadata/distance and create custom metric
-periphyton_meta_dist <- full_join(x = periphyton, y = ppcp_meta_dist,
+# Join periphyton data with site_information/distance and create custom metric
+periphyton_site_info_dist <- full_join(x = periphyton, y = ppcp_site_info_dist,
                                   by = "site")
 
 
 # 3.1 Univariate analysis -------------------------------------------------
 
 # Convert periphyton data to long format and add total count
-periphyton_meta_dist_long <- periphyton_meta_dist %>%
+periphyton_site_info_dist_long <- periphyton_site_info_dist %>%
   gather(key = taxon, value = count, desmidales:ulothrix) %>%
   filter(!(taxon %in% c("desmidales", "pediastrum"))) %>%
   group_by(site) %>%
@@ -96,7 +96,7 @@ periphyton_meta_dist_long <- periphyton_meta_dist %>%
 
 # Rework Site column as a factor
 # Remove data with Site = NA
-periphyton_long_clean <- periphyton_meta_dist_long %>% 
+periphyton_long_clean <- periphyton_site_info_dist_long %>% 
   filter(!is.na(site)) %>%
   mutate(site = factor(x = site,
                        levels = c("BGO-2",  "BGO-3", "KD-1",
@@ -106,7 +106,7 @@ periphyton_long_clean <- periphyton_meta_dist_long %>%
                                   "LI-2", "LI-3")))
 
 # Plot periphyton counts as a function of site and taxa
-periphyton_meta_dist_plot <- ggplot(data = periphyton_long_clean) +
+periphyton_site_info_dist_plot <- ggplot(data = periphyton_long_clean) +
   geom_bar(aes(x = site, y = total_count), fill = "grey80", stat = "identity") +
   geom_bar(aes(x = site, y = count, fill = taxon), stat = "identity") +
   scale_fill_viridis_d(option = "inferno") +
@@ -132,7 +132,7 @@ periphyton_meta_dist_plot <- ggplot(data = periphyton_long_clean) +
 # This plot is not included in the associated manuscript but is included to
 # offer insight for multivariate analyeses.
 
-ggsave(filename = "periphyton_univariate.png", plot = periphyton_meta_dist_plot,
+ggsave(filename = "periphyton_univariate.png", plot = periphyton_site_info_dist_plot,
        device = "png", path = "../figures/", width = 11, height = 8.5,
        units = "in")
 
@@ -140,7 +140,7 @@ ggsave(filename = "periphyton_univariate.png", plot = periphyton_meta_dist_plot,
 # 3.2 Multivariate analysis -----------------------------------------------
 
 # Clean dataset and add IDW_pop_group
-periphyton_meta_dist_wide <- periphyton_meta_dist %>%
+periphyton_site_info_dist_wide <- periphyton_site_info_dist %>%
   filter(!(site %in% c("OS-1", "OS-2", "OS-3"))) %>%
   mutate(IDW_pop_group = ifelse(test = site %in% high,
                                 yes = "High", no = "NULL"),
@@ -148,7 +148,7 @@ periphyton_meta_dist_wide <- periphyton_meta_dist %>%
                                 yes = "Low/Mod", no = IDW_pop_group))
 
 # Define community for NMDS
-peri_community <- periphyton_meta_dist_wide %>%
+peri_community <- periphyton_site_info_dist_wide %>%
   select(diatom:ulothrix)
 
 # Run NMDS
@@ -157,11 +157,11 @@ periphyton_nmds
 
 # Pull scores from NMDS and add site data
 data_scores <- as.data.frame(scores(x = periphyton_nmds))
-data_scores$site <- periphyton_meta_dist_wide %>%
+data_scores$site <- periphyton_site_info_dist_wide %>%
   pull(site)
 
 # Join scores with PPCP data and code into PI groups
-data_scores <- inner_join(x = data_scores, y = ppcp_meta_dist, 
+data_scores <- inner_join(x = data_scores, y = ppcp_site_info_dist, 
                           by = "site") %>%
   mutate(IDW_pop_group = ifelse(test = site %in% high,
                                 yes = "High", no = "NULL"),
@@ -246,18 +246,18 @@ ggsave(filename = "../figures/periphyton_hclust_analysis.png",
        dpi = 300)
 
 # Run PERMANOVA
-adonis2(formula = periphyton_meta_dist_wide[, 2:7]
-       ~ log10(periphyton_meta_dist_wide[, 21]),
-       data = periphyton_meta_dist_wide,
+adonis2(formula = periphyton_site_info_dist_wide[, 2:7]
+       ~ log10(periphyton_site_info_dist_wide[, 21]),
+       data = periphyton_site_info_dist_wide,
        method = "bray", permutations = 999)
 
-adonis2(formula = periphyton_meta_dist_wide[, 2:7]
-        ~ periphyton_meta_dist_wide[, 22],
-        data = periphyton_meta_dist_wide,
+adonis2(formula = periphyton_site_info_dist_wide[, 2:7]
+        ~ periphyton_site_info_dist_wide[, 22],
+        data = periphyton_site_info_dist_wide,
         method = "bray", permutations = 999)
 
-simper_results <- simper(comm = periphyton_meta_dist_wide[, 2:7],
-                         group = periphyton_meta_dist_wide[, 22],
+simper_results <- simper(comm = periphyton_site_info_dist_wide[, 2:7],
+                         group = periphyton_site_info_dist_wide[, 22],
                          permutations = 999)
 
 summary(simper_results)
@@ -269,7 +269,7 @@ summary(simper_results)
 # 4.1 Univariate analysis -------------------------------------------------
 
 # Convert invertebrate data to long format and add total count
-invertebrate_meta_dist <- full_join(x = invertebrates, y = ppcp_meta_dist,
+invertebrate_site_info_dist <- full_join(x = invertebrates, y = ppcp_site_info_dist,
                                     by = "site")
 
 # Define amphipod genera
@@ -280,7 +280,7 @@ molluscs <- c("Acroloxidae", "Baicaliidae",  "Benedictidae", "Planorbidae",
               "Valvatidae")
 
 # Make invertebrate data long format, sum counts, and group genera
-invertebrates_long <- invertebrate_meta_dist %>%
+invertebrates_long <- invertebrate_site_info_dist %>%
   select(site:Valvatidae) %>%
   gather(key = taxon, value = count, Acroloxidae:Valvatidae) %>%
   filter(!grepl("juvenile", taxon, ignore.case = TRUE)) %>%
@@ -334,7 +334,7 @@ ggplot(invertebrates_long) +
         legend.text = element_text(size = 16))
 
 # Create a cleaned up wide format invertebrate genus dataset
-invertebrates_condensed_wide <- invertebrate_meta_dist %>%
+invertebrates_condensed_wide <- invertebrate_site_info_dist %>%
   select(site:Valvatidae) %>%
   gather(key = taxon, value = count, Acroloxidae:Valvatidae) %>%
   filter(!grepl("juvenile", taxon, ignore.case = TRUE)) %>%
@@ -355,7 +355,7 @@ pairs(invertebrates_condensed_wide[, 3:17], upper.panel = panel.cor)
 
 
 # Remove poorly preserved genera from dataset
-invertebrates_well_preserved_long <- invertebrate_meta_dist %>%
+invertebrates_well_preserved_long <- invertebrate_site_info_dist %>%
   select(site:Valvatidae) %>%
   gather(key = taxon, value = count, Acroloxidae:Valvatidae) %>%
   filter(!grepl("juvenile", taxon, ignore.case = TRUE)) %>%
@@ -403,7 +403,7 @@ invertebrate_well_preserved_plot <- invertebrates_well_preserved_long_ordered %>
            stat = "identity") +
   scale_fill_viridis_d(option = "inferno") +
   facet_wrap(~ Genus) +
-  xlab("Site (Arranged by increasing population intensity)") +
+  xlab("Site (Arranged by increasing IDW population)") +
   ylab("Number of Individuals") +
   theme_classic() +
   theme(legend.position = "none",
@@ -430,7 +430,7 @@ ggsave(filename = "../figures/invertebrate_well_preserved_plot.png",
 # Create a cleaned up wide format invertebrate genus dataset with well preserved
 # genera. In this step we also remove rare species (i.e., taxa representing less
 # than 1% of the intercommunity abundance).
-invertebrates_well_preserved_wide <- invertebrate_meta_dist %>%
+invertebrates_well_preserved_wide <- invertebrate_site_info_dist %>%
   select(site:Valvatidae) %>%
   gather(key = taxon, value = count, Acroloxidae:Valvatidae) %>%
   filter(!grepl("juvenile", taxon)) %>%
@@ -496,7 +496,7 @@ data_scores <- as.data.frame(scores(x = invertebrates_metaMDS, display = "sites"
 data_scores$site <- invertebrates_well_preserved_wide$site
 
 # Join scores with PPCP data and code into IDW_pop_group
-data_scores <- full_join(x = data_scores, y = ppcp_meta_dist, by = "site") %>%
+data_scores <- full_join(x = data_scores, y = ppcp_site_info_dist, by = "site") %>%
   mutate(IDW_pop_group = ifelse(test = site %in% c(low, mod),
                                 yes = "Low/Mod", no = NA),
          IDW_pop_group = ifelse(test = site %in% high,
@@ -521,15 +521,15 @@ inverts_well_preserved_nmds <- ggplot() +
                                           "Caddisflies", "Brandtia", "Planorbidae", "Baicaliidae",
                                           "Cryptoropus", "Flatworms")) %>%
                     mutate(NMDS1 = ifelse(test = species == "Poekilogammarus", 
-                                                 yes = NMDS1+0.0285, no = NMDS1),
+                                                 yes = NMDS1+0.015, no = NMDS1),
                            NMDS2 = ifelse(test = species == "Poekilogammarus", 
-                                          yes = NMDS2+0.02, no = NMDS2),
+                                          yes = NMDS2+0.075, no = NMDS2),
                            NMDS1 = ifelse(test = species == "Eulimnogammarus", 
                                                  yes = NMDS1-0.08, no = NMDS1),
                            NMDS1 = ifelse(test = species == "Eulimnogammarus", 
                                           yes = NMDS1-0.06, no = NMDS1),
                            NMDS2 = ifelse(test = species == "Flatworms", 
-                                          yes = NMDS2-0.07, no = NMDS2),
+                                          yes = NMDS2-0.15, no = NMDS2),
                            species = ifelse(test = species %in% amphipods, 
                                             yes = paste0("italic(", species, ")"),
                                             no = species)),
@@ -557,9 +557,9 @@ ggsave(filename = "../figures/inverts_well_preserved_nmds.png",
        plot = inverts_well_preserved_nmds, device = "png",
        height = 10, width = 20, dpi = 300)
 
-# Re-join the metadata and distance data back in with invert data
-inverts_well_preserved_meta_dist_wide <- full_join(x = invertebrates_well_preserved_wide,
-                                                   y = ppcp_meta_dist,
+# Re-join the site_information and distance data back in with invert data
+inverts_well_preserved_site_info_dist_wide <- full_join(x = invertebrates_well_preserved_wide,
+                                                   y = ppcp_site_info_dist,
                                                    by = "site") %>%
   mutate(IDW_pop_group = ifelse(test = site %in% c(low, mod),
                                 yes = "Low/Mod", no = NA),
@@ -569,19 +569,19 @@ inverts_well_preserved_meta_dist_wide <- full_join(x = invertebrates_well_preser
   data.frame()
 
 # Run PERMANOVA
-adonis2(formula = sqrt(inverts_well_preserved_meta_dist_wide[, 3:14]) ~
-          inverts_well_preserved_meta_dist_wide[, 28],
-        data = inverts_well_preserved_meta_dist_wide,
+adonis2(formula = sqrt(inverts_well_preserved_site_info_dist_wide[, 3:14]) ~
+          inverts_well_preserved_site_info_dist_wide[, 28],
+        data = inverts_well_preserved_site_info_dist_wide,
         method = "bray")
 
-adonis2(formula = sqrt(inverts_well_preserved_meta_dist_wide[, 3:14]) ~
-         inverts_well_preserved_meta_dist_wide[, 29],
-       data = inverts_well_preserved_meta_dist_wide,
+adonis2(formula = sqrt(inverts_well_preserved_site_info_dist_wide[, 3:14]) ~
+         inverts_well_preserved_site_info_dist_wide[, 29],
+       data = inverts_well_preserved_site_info_dist_wide,
        method = "bray")
 
 # Run SIMPER
-simper_results <- simper(comm = sqrt(inverts_well_preserved_meta_dist_wide[, 3:14]),
-                         group = inverts_well_preserved_meta_dist_wide[, 29],
+simper_results <- simper(comm = sqrt(inverts_well_preserved_site_info_dist_wide[, 3:14]),
+                         group = inverts_well_preserved_site_info_dist_wide[, 29],
                          permutations = 999)
 
 summary(simper_results)

@@ -18,7 +18,7 @@ if (!dir.exists(output_dir)){
 
 # 1. Load the data --------------------------------------------------------
 
-metadata <- read.csv(file = "../cleaned_data/metadata.csv",
+site_information <- read.csv(file = "../cleaned_data/site_information.csv",
                      header = TRUE, stringsAsFactors = FALSE)
 
 ppcp <- read.csv(file = "../cleaned_data/ppcp.csv",
@@ -34,9 +34,9 @@ distance <- read.csv(file = "../cleaned_data/distance_weighted_population_metric
                      header = TRUE, stringsAsFactors = FALSE)
 
 
-# 2. Site metadata table --------------------------------------------------
+# 2. Site information table --------------------------------------------------
 
-metadata_formatted <- metadata %>%
+site_information_formatted <- site_information %>%
   select(-mid_temp_celsius, -bottom_temp_celsius) %>%
   rename(Latitude = lat,
          Longitude = long,
@@ -57,7 +57,7 @@ metadata_formatted <- metadata %>%
 # This table is meant to be associated with Table 1 in the main
 # body of the manuscript.
 
-write.csv(x = metadata_formatted, file = "../tables/metadata_table1.csv",
+write.csv(x = site_information_formatted, file = "../tables/site_information_table1.csv",
           row.names = FALSE)
 
 
@@ -73,10 +73,10 @@ write.csv(x = ppcp_formatted, file = "../tables/ppcp.csv",
 # 4. Nutrients table ------------------------------------------------------
 
 nutrients_formatted <- nutrients %>%
-  select(-mean_tp_mg_dm3) %>%
+  select(-mean_tpo43_mg_dm3) %>%
   rename(NH4_mg_dm3 = mean_nh4_mg_dm3,
          NO3_mg_dm3 = mean_no3_mg_dm3,
-         PO4_mg_dm3 = mean_tpo43_mg_dm3)
+         TP_mg_dm3 = mean_tp_mg_dm3)
 
 write.csv(x = nutrients_formatted, file = "../tables/nutrients.csv",
           row.names = FALSE)
@@ -103,7 +103,7 @@ high <- c("BK-1", "EM-1", "LI-3", "LI-2", "LI-1", "OS-2")
 
 # This table is associated with Table 2 in the manuscript
 
-meta_nut_ppcp_mp <- full_join(x = metadata_formatted,
+meta_nut_ppcp_mp <- full_join(x = site_information_formatted,
                               y = nutrients_formatted,
                               by = c("Site" = "site")) %>%
   full_join(x = ., y = ppcp_formatted, by = c("Site" = "site")) %>%
