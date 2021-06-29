@@ -85,13 +85,11 @@ chlorophylla <- chla_orig %>%
   filter(Station %in% st_ids) %>%
   clean_names(case = "snake") %>%
   # Correct unintended formatting as dates
-  mutate(replicate = as.character(replicate),
-         replicate = ifelse(test = grepl(pattern = "Jan", x = replicate), 
-                            yes = 1, no = replicate),
-         replicate = ifelse(test = grepl(pattern = "Feb", x = replicate), 
-                            yes = 2, no = replicate),
-         replicate = ifelse(test = grepl(pattern = "Mar", x = replicate), 
-                            yes = 3, no = replicate)) %>%
+  mutate(replicate = case_when(
+    grepl("Jan", replicate) ~ "1",
+    grepl("Feb", replicate) ~ "2",
+    grepl("Mar", replicate) ~ "3"
+  )) %>%
   rename(site = station)
 
 head(chlorophylla)
@@ -166,32 +164,29 @@ inverts_wide <- inverts_orig %>%
   summarize(sum_count = sum(count)) %>%
   ungroup() %>%
   separate(col = taxon, into = c("Genus", "Species", "Subspecies")) %>%
-  mutate(Genus = ifelse(test = Genus == "E",
-                        yes = "Eulimnogammarus", no = Genus),
-         Genus = ifelse(test = Genus == "Eulimno",
-                        yes = "Eulimnogammarus", no = Genus),
-         Genus = ifelse(test = Genus == "flatworms",
-                        yes = "Flatworms", no = Genus),
-         Genus = ifelse(test = Genus == "caddisflies",
-                        yes = "Caddisflies", no = Genus),
-         Genus = ifelse(test = Genus == "pallasea",
-                        yes = "Pallasea", no = Genus),
-         Genus = ifelse(test = Genus == "hyallela",
-                        yes = "Hyallela", no = Genus),
-         Genus = ifelse(test = Genus == "poekilo",
-                        yes = "Poekilogammarus", no = Genus),
-         Genus = ifelse(test = Genus == "Poekilo",
-                        yes = "Poekilogammarus", no = Genus),
-         Genus = ifelse(test = Genus == "valvatidae",
-                        yes = "Valvatidae", no = Genus),
-         Species = ifelse(test = Species == "spp",
-                          yes = NA, no = Species),
-         Species = ifelse(test = Species == "Juveniles",
-                          yes = "juveniles", no = Species),
-         Species = ifelse(test = Species == "maacki",
-                          yes = "maackii", no = Species),
-         Subspecies = ifelse(test = Subspecies == "virids",
-                          yes = "viridis", no = Subspecies)) %>%
+  mutate(
+    Genus = case_when(
+      Genus == "E" ~ "Eulimnogammarus",
+      Genus == "Eulimno" ~ "Eulimnogammarus",
+      Genus == "flatworms" ~ "Flatworms",
+      Genus == "caddisflies" ~ "Caddisflies",
+      Genus == "pallasea" ~ "Pallasea",
+      Genus == "hyallela" ~ "Hyallela",
+      Genus %in% c("poekilo", "Poekilo") ~ "Poekilogammarus",
+      Genus == "valvatidae" ~ "Valvatidae",
+      TRUE ~ Genus
+    ),
+    Species = case_when(
+      Species == "spp" ~ NA_character_,
+      Species == "Juveniles" ~ "juveniles",
+      Species == "maacki" ~ "maackii",
+      TRUE ~ Species
+    ),
+    Subspecies = case_when(
+      Subspecies == "virids" ~ "viridis",
+      TRUE ~ Subspecies
+    )
+  ) %>%
   unite(col = "taxon", Genus, Species, Subspecies) %>%
   mutate(taxon = gsub(pattern = "_NA_NA", replacement = "", x = taxon),
          taxon = gsub(pattern = "_NA", replacement = "", x = taxon),
