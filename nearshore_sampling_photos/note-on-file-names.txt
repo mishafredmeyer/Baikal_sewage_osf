@@ -1,0 +1,6 @@
+Sampling photos
+Baikal 2015
+
+Photo naming convention: YYYYMMDD_HHMM_SiteName_OriginalFileName.JPG
+
+HHMM is based on camera's time zone, not local time.

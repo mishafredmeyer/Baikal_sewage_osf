@@ -10,6 +10,10 @@ library(ggrepel)
 library(viridis)
 library(ggsn)
 library(sp)
+library(sf)
+library(ggspatial)
+library(cowplot)
+
 
 # Check if figures directory exists 
 # If not, create the figures directory
@@ -26,99 +30,106 @@ if (!dir.exists(output_dir)){
 # Step 1: Import data and join datasets -----------------------------------
 
 site_information <- read.csv(file = "../cleaned_data/site_information.csv",
-                          stringsAsFactors = FALSE)
+                             stringsAsFactors = FALSE)
 
 distance <- read.csv(file = "../cleaned_data/distance_weighted_population_metrics.csv",
                      header = TRUE, stringsAsFactors = FALSE)
 
+baikal_shapefile <- sf::st_read(dsn = "../original_data/Baikal_shapefile.kml") %>%
+  filter(!grepl(pattern = "shoreline", x = Name))
+
+## Combine site informaiton and distance dfs
+## Also make object an sf object
+
 sample_points <- full_join(x = site_information,
                            y = distance,
-                           by = c("site"))
-
-# Make the locations Mercator
-sample_points_merc <- projectMercator(lat = sample_points$lat,
-                                      long = sample_points$long) %>%
-  as.data.frame() %>%
-  bind_cols(., sample_points)
+                           by = c("site")) %>%
+  st_as_sf(coords = c("long", "lat"), crs = 4326)
 
 
-# Step 2: Start building the map ------------------------------------------
-
-# Get a basemap
-# Options: https://www.r-bloggers.com/the-openstreetmap-package-opens-up/
-base_map <- openmap(upperLeft = c(55.915113, 102.2324553),
-                    lowerRight = c(51.1800703, 110.8),
-                    type = "esri") %>%
-  openproj()
-
-# Get a zoomed in map
-base_map_zoom <- openmap(upperLeft = c(52.15, 104.75),
-                         lowerRight = c(51.75, 105.55),
-                         type = "bing", zoom = 11) %>%
-  openproj() 
+# Step 2: Make a map of all of Baikal -------------------------------------
 
 
-# Build the inset map with the basemap
-inset_map <- autoplot.OpenStreetMap(base_map) +
-  geom_point(data = sample_points_merc,
-             aes(x = long, y = lat,
-                 fill = log10(distance_weighted_population)),
-             alpha = 1,  color = "grey70", size = 3,
-             shape = 21) +
-  scale_fill_viridis(option = "plasma") +
+full_baikal_map <- ggplot() +
+  annotation_map_tile(
+    type = "https://tile.openstreetmap.org/${z}/${x}/${y}.png",
+    zoom = 6,
+    cachedir = "data/map_tiles/") +
+  # geom_sf(data = developments, color = "black", alpha = 0.5, fill = viridis(10)[2]) +
+  geom_sf(data = sample_points,
+          mapping = aes(fill = distance_weighted_population),
+          color = "black", 
+          pch = 21, size = 3, alpha = 0.7) +
+  scale_fill_viridis(option = "plasma", name = "IDW Population", trans = "log10",
+                     # breaks = c(10, 50, 100, 200),
+                     # labels = c(10, 50, 100, 200),
+                     guide = guide_colorbar(barwidth = 4,
+                                            barheight = 20),
+                     na.value = "grey50") +
+  #scale_x_continuous(breaks = c(-114.45, -114.25, -114.05, -113.85)) +
+  #scale_y_continuous(breaks = c(47.70, 47.82, 47.94, 48.06)) +
+  coord_sf(xlim = c(102.2324553, 110.8), ylim = c(51.1800703, 55.915113), crs = 4326) +
   theme(axis.text.x = element_text(size = 10),
         axis.text.y = element_text(size = 10),
         plot.background = element_rect(fill = "snow1")) +
   annotate(geom = "text", label = "Irkutsk Oblast",
-           x = 105, y = 54, color = "black", size = 5) +
+           x = 105, y = 54, color = "black", size = 7) +
   annotate(geom = "text", label = "Republic of\nBuryatiya",
-           x = 109, y = 52.35, color = "black", size = 5) +
-  xlab("") +
-  ylab("") +
+           x = 109, y = 52.4, color = "black", size = 7) +
   theme(legend.position = "none",
         axis.title.x = element_blank(),
-        axis.title.y = element_blank())
+        axis.title.y = element_blank(),
+        plot.background = element_rect(color = "black", fill="snow2", size=3))
 
-# Build a close up map with satellite imagery & zoomed in map
-zoom_map <- autoplot.OpenStreetMap(base_map_zoom) +
-  geom_point(data = sample_points_merc, 
-             aes(x = long, y = lat,
-                 size = log10(distance_weighted_population),
-                 fill = log10(distance_weighted_population)),
-             alpha = 0.8,  color = "grey70", shape = 21,
-             stroke = 2.5) +
-  #geom_sf(data = st_as_sf(sample_points_merc, coords = c("long", "lat"), remove = FALSE), 
-  #        aes(geometry = geometry, x = long, y = lat)) +
-  scale_fill_viridis(option = "plasma", name = "log10(IDW Pop)") +
-  scale_size_continuous(range = c(1, 20), guide = "none") +
-  scalebar(data = sf::st_as_sf(sample_points_merc[ , -c(1:2)], coords = c("long", "lat")), 
-           anchor = c(x = 105.43, y = 51.80), dist = 10,
-           dist_unit = "km", transform = TRUE, model = "WGS84",
-           st.bottom = FALSE, st.size = 8, st.dist = 0.1, 
-           st.color = "white", height = 0.05, 
-           box.color = "white") + 
-  xlab("Longitude") +
-  ylab("Latitude") +
+
+# Step 3: Create the zoomed in map of the sampling area -------------------
+
+
+zoomed_in_baikal_map <- ggplot() +
+  annotation_map_tile(
+    type = 'https://stamen-tiles.a.ssl.fastly.net/terrain-background/${z}/${x}/${y}.png',
+    zoom = 11,
+    cachedir = "data/map_tiles/") +
+  geom_sf(data = baikal_shapefile, color = "black", alpha = 0.95, fill = viridis(10)[1]) +
+  geom_sf(data = sample_points, 
+          aes(fill = distance_weighted_population,
+              size = distance_weighted_population), 
+          alpha = 0.6,  color = "grey70", shape = 21,
+          stroke = 1) +
+  scale_fill_viridis(option = "plasma", name = "IDW Population", trans = "log10",
+                     # breaks = c(10, 50, 100, 200),
+                     # labels = c(10, 50, 100, 200),
+                     guide = guide_colorbar(barwidth = 4,
+                                            barheight = 20), 
+                     na.value = "grey50") +
+  scale_size_continuous(range = c(1, 15), guide = "none", trans = "log10") +
   annotate(geom = "text", label = "Bolshoe Goloustnoe",
-           x = 105.4, y = 52.06, color = "white", size = 10) +
+           x = 105.35, y = 52.06, color = "white", size = 10) +
   annotate(geom = "text", label = "Bolshie Koty",
            x = 105.075, y = 51.935, color = "white", size = 10) +
   annotate(geom = "text", label = "Listvyanka",
            x = 104.85, y = 51.9, color = "white", size = 10) +
-  theme(legend.key.height = unit(1, "in"),
-        legend.key.width = unit(0.65, "in"),
-        legend.text = element_text(size = 20),
-        legend.title = element_text(size = 24),
+  annotation_scale(location = "bl") +
+  xlab("") +
+  ylab("") +
+  coord_sf(xlim = c(104.75, 105.55), ylim = c(51.75, 52.15), crs = 4326) +
+  theme_bw() +
+  theme(legend.key.height = unit(2, "in"),
+        legend.key.width = unit(0.85, "in"),
+        legend.text = element_text(size = 30),
+        legend.title = element_text(size = 36),
         panel.background = element_blank(),
-        axis.title = element_text(size = 24),
-        axis.text = element_text(size = 20)) 
+        axis.title = element_text(size = 36),
+        axis.text = element_text(size = 30)) 
 
-# Combine both maps. Resource used for this:
-# https://stackoverflow.com/questions/5219671/it-is-possible-to-create-inset-graphs
-baikal_combine <- ggdraw() +
-  draw_plot(zoom_map) +
-  draw_plot(inset_map, x = -0.01, y = 0.57, width = .5, height = .33, scale = 1) 
 
-# This plot is associated with Figure 1 in the accompanying manuscript.
-ggsave(filename = "../figures/baikal_map.png", plot = baikal_combine, device = "png",
+# Step 4: Join the maps and save the file ---------------------------------
+
+
+baikal_map <- ggdraw() +
+  draw_plot(zoomed_in_baikal_map) +
+  draw_plot(plot = full_baikal_map,
+            x = 0, y = 0.62, width = .6, height = .35, scale = 1) 
+
+ggsave(filename = "../figures/baikal_map.png", plot = baikal_map, device = "png",
        width = 18, height = 9, units = "in")

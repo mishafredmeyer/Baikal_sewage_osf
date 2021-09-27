@@ -476,26 +476,28 @@ ppcp_filamentous_diatom_fa_plot <- fatty_acid_prop_ppcp_site_info_dist %>%
                           yes = "*Eulimnogammarus vittatus*", no = taxon),
            taxon = ifelse(test = taxon == "Periphyton_NA",
                           yes = "Periphyton", no = taxon)) %>%
-    ggplot(aes(x = log10(ppcp_sum), 
+    ggplot(aes(x = (ppcp_sum), 
                y = (c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c14_0 + c16_0))) +
     geom_point(size = 3) +
+    scale_x_log10() +
     facet_wrap(~ taxon) +
     geom_smooth(method = "lm") +
     geom_richtext(data = labels %>% filter(taxon != "Periphyton"), 
                mapping = aes(label = label, 
-                             x = -2.0, y = 1.75), size = 7) +
+                             x = 0.01, y = 1.75), size = 7) +
     geom_richtext(data = labels %>% filter(taxon == "Periphyton"), 
                   mapping = aes(label = label, 
-                                x = -2.0, y = 1.15), size = 7) +
-    xlab(label = "log10([Total PPCP])") +
+                                x = 0.01, y = 1.15), size = 7) +
+    xlab(label = "Total PPCP (\u00b5g/L)") +
     ylab(label = expression(frac(18:3~omega~3 + 18:1~omega~9 + 18:2~omega~6 + 16:0, 
                                  16:1~omega~7 + 20:5~omega~3 + 16:0 + 14:0))) +
     theme_bw() +
     theme(text = element_text(size = 20),
-          strip.text = element_markdown())
+          axis.title = element_text(size = 24),
+          strip.text = element_markdown(size = 24))
 
 ggsave(filename = "ppcp_filamentous_diatom_fa_plot.png", plot =  ppcp_filamentous_diatom_fa_plot, device = "png",
-       path = "../figures/", width = 12, height = 6, units = "in")
+       path = "../figures/", width = 16, height = 8, units = "in")
 
 # Now we will build the plots for FA ~ IDW population
 
@@ -533,17 +535,18 @@ pop_filamentous_diatom_fa_plot <- fatty_acid_prop_ppcp_site_info_dist %>%
                         yes = "*Eulimnogammarus vittatus*", no = taxon),
          taxon = ifelse(test = taxon == "Periphyton_NA",
                         yes = "Periphyton", no = taxon)) %>%
-  ggplot(aes(x = log10(distance_weighted_population), 
+  ggplot(aes(x = (distance_weighted_population), 
              y = (c18_3w3 + c18_1w9 + c18_2w6 + c16_0)/(c16_1w7 + c20_5w3 + c14_0 + c16_0))) +
   geom_point(size = 3) +
   facet_wrap(~ taxon) +
   geom_smooth(method = "lm") +
+  scale_x_log10() +
   geom_richtext(data = labels %>% filter(taxon != "Periphyton"), 
                 mapping = aes(label = label, 
-                              x = 3.0, y = 1.75), size = 7) +
+                              x = 1300, y = 1.75), size = 7) +
   geom_richtext(data = labels %>% filter(taxon == "Periphyton"), 
                 mapping = aes(label = label, 
-                              x = 3.0, y = 1.15), size = 7) +
+                              x = 1300, y = 1.15), size = 7) +
   xlab(label = "log10(IDW Population)") +
   ylab(label = expression(frac(18:3~omega~3 + 18:1~omega~9 + 18:2~omega~6 + 16:0, 
                                16:1~omega~7 + 20:5~omega~3 + 16:0 + 14:0))) +
@@ -689,22 +692,24 @@ ppcp_efa_plot <- fatty_acid_prop_ppcp_site_info_dist %>%
                         yes = "*Eulimnogammarus vittatus*", no = taxon),
          taxon = ifelse(test = taxon == "Periphyton_NA",
                         yes = "Periphyton", no = taxon)) %>%
-  ggplot(aes(x = log10(ppcp_sum), y = ((c18_3w3 + c18_2w6) / (c20_5w3)))) +
+  ggplot(aes(x = (ppcp_sum), y = ((c18_3w3 + c18_2w6) / (c20_5w3)))) +
+  scale_x_log10() +
   geom_point(size = 3) +
   facet_wrap(~ taxon) +
   geom_smooth(method = "lm") +
   geom_richtext(data = labels %>% filter(taxon != "Periphyton"), 
-                mapping = aes(label = label, x = -2.0, y = 5), size = 7) +
+                mapping = aes(label = label, x = 0.01, y = 5), size = 7) +
   geom_richtext(data = labels %>% filter(taxon == "Periphyton"), 
-             mapping = aes(label = label, x = -2.0, y = 2.5), size = 7) +
-  xlab(label = "log10([Total PPCP])") +
+             mapping = aes(label = label, x = 0.01, y = 2.5), size = 7) +
+  xlab(label = "Total PPCP (\u00b5g/L)") +
   ylab(label = expression(frac(18:3~omega~3 + 18:2~omega~6, 20:5~omega~3 ))) +
   theme_bw() +
   theme(text = element_text(size = 20),
-        strip.text = element_markdown())
+        axis.title = element_text(size = 24),
+        strip.text = element_markdown(size = 24))
 
 ggsave(filename = "ppcp_efa_plot.png", plot = ppcp_efa_plot, device = "png",
-       path = "../figures/", width = 12, height = 6, units = "in")
+       path = "../figures/", width = 16, height = 8, units = "in")
 
 # Now we will build the plots for FA ~ IDW population
 
@@ -742,17 +747,17 @@ pop_efa_plot <- fatty_acid_prop_ppcp_site_info_dist %>%
                         yes = "*Eulimnogammarus vittatus*", no = taxon),
          taxon = ifelse(test = taxon == "Periphyton_NA",
                         yes = "Periphyton", no = taxon)) %>%
-  ggplot(aes(x = log10(distance_weighted_population), 
+  ggplot(aes(x = (distance_weighted_population), 
              y = (c18_3w3 + c18_2w6)/(c20_5w3))) +
   geom_point(size = 3) +
   facet_wrap(~ taxon) +
   geom_smooth(method = "lm") +
   geom_richtext(data = labels %>% filter(taxon != "Periphyton"), 
                 mapping = aes(label = label, 
-                              x = 3.0, y = 2.5), size = 7) +
+                              x = 1300, y = 2.5), size = 7) +
   geom_richtext(data = labels %>% filter(taxon == "Periphyton"), 
                 mapping = aes(label = label, 
-                              x = 3.0, y = 1.15), size = 7) +
+                              x = 1300, y = 1.15), size = 7) +
   xlab(label = "log10(IDW Population)") +
   ylab(label = expression(frac(18:3~omega~3 + 18:2~omega~6, 
                                20:5~omega~3))) +
@@ -770,7 +775,7 @@ arranged_plots <- ggarrange(ppcp_filamentous_diatom_fa_plot, ppcp_efa_plot, ncol
                             labels = "AUTO", font.label = list(size = 20, face = "bold"))
 
 ggsave(filename = "combined_ppcp_fattyy_acids.png", plot = arranged_plots, device = "png", path = "../figures/", 
-       width = 12, height = 12, units = "in")
+       width = 16, height = 12, units = "in")
 
 arranged_plots <- ggarrange(pop_filamentous_diatom_fa_plot, pop_efa_plot, ncol = 1, nrow = 2, 
                             labels = "AUTO", font.label = list(size = 20, face = "bold"))
@@ -870,10 +875,11 @@ fatty_acid_type_props_summary_table <- fatty_acid_prop_ppcp_site_info_dist %>%
   summarize(sum_fa_prop = sum(fa_prop)) %>%
   ungroup() %>%
   group_by(Genus, Species, fatty_acid_type) %>%
-  summarize(mean_fa_prop = mean(sum_fa_prop)) %>%
+  summarize(mean_fa_prop = mean(sum_fa_prop),
+            sd_fa_prop = sd(sum_fa_prop)) %>%
   inner_join(., sample_count) %>%
   filter(Genus != "Hyalella") %>%
-  spread(fatty_acid_type, mean_fa_prop)
+  pivot_wider(names_from = "fatty_acid_type", values_from = c("mean_fa_prop", "sd_fa_prop"))
 
 write.csv(x = fatty_acid_type_props_summary_table, 
           file = "../tables/fatty_acid_type_props_summary_table.csv", 

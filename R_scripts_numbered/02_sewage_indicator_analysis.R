@@ -154,21 +154,26 @@ summary(ppcp_PI_model)
 
 # Plot linear model
 ppcp_PI_plot <- ggplot(data = ppcp_site_info_dist,
-                       aes(x = log10(distance_weighted_population),
-                           y =  log10(ppcp_sum))) +
-  geom_point() +
+                       aes(x = (distance_weighted_population),
+                           y =  (ppcp_sum))) +
+  geom_point(size = 6) +
   geom_smooth(method = "lm", se = TRUE) +
-  ylab("log10([Total PPCP])") +
-  xlab("log10(IDW Population)") +
+  scale_y_log10()+
+  scale_x_log10() +
+  ylab("Total PPCP (\u00b5g/L)") +
+  xlab("IDW Population (people)") +
   ggtitle("PPCP vs. IDW Population") +
-  annotate(geom = "label", x = 3.5, y = -2.65,
-           label = paste("p-value: ",
-                         round(summary(ppcp_PI_model)$coefficients[2, 4], 3),
-                         "\nR-squared: ",
-                         round(summary(ppcp_PI_model)$r.squared, 3), 
-                         "\nN = ", nrow(ppcp_site_info_dist)),
-           parse = FALSE) +
-  theme_minimal()
+  geom_richtext(data = glance(ppcp_PI_model), 
+                mapping = aes(label = paste0("p-value: ",
+                                             round(p.value, 3),
+                                             "<br>R<sup>2</sup>: ",
+                                             round(r.squared, 3),
+                                             "<br> N = ", nobs), x = 6000, y = 0.1), size = 10) +
+  theme_minimal() +
+  theme(strip.text = element_markdown(),
+        axis.text = element_text(size = 28),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 34))
 
 # Export plot
 ggsave(filename = "../figures/ppcp_PI_plot.png", plot = ppcp_PI_plot,
@@ -197,20 +202,26 @@ summary(phosphorus_PI_model)
 
 # Plot linear model
 phosphorus_PI_plot <- ggplot(data = nutrients_site_info_dist,
-                             aes(x = log10(distance_weighted_population),
-                                 y = log10(mean_tp_mg_dm3))) +
-  geom_point() +
+                             aes(x = (distance_weighted_population),
+                                 y = (mean_tp_mg_dm3))) +
+  geom_point(size = 6) +
   geom_smooth(method = "lm", se = TRUE) +
-  ylab("log10([Total Phosphorus])") +
-  xlab("log10(IDW Population)") +
-  ggtitle("Phosphorus vs. IDW Population") +
-  annotate(geom = "label", x = 3.0, y = -1.45,
-           label = paste0("p-value: ",
-                          round(summary(phosphorus_PI_model)$coefficients[2, 4], 3),
-                          "\nR-squared: ",
-                          round(summary(phosphorus_PI_model)$r.squared, 3), 
-                          "\nN = ", nrow(nutrients_site_info_dist))) +
-  theme_minimal()
+  scale_y_log10()+
+  scale_x_log10() +
+  ylab("Phosphorus (mg/L)") +
+  xlab("IDW Population (people)") +
+  ggtitle("Total Phosphorus vs. IDW Population") +
+  geom_richtext(data = glance(phosphorus_PI_model), 
+                mapping = aes(label = paste0("p-value: ",
+                                             round(p.value, 3),
+                                             "<br>R<sup>2</sup>: ",
+                                             round(r.squared, 3),
+                                             "<br> N = ", nobs), x = 6000, y = 0.04), size = 10) +
+  theme_minimal() +
+  theme(strip.text = element_markdown(),
+        axis.text = element_text(size = 28),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 34))
 
 # Export plot
 ggsave("phosphorus_PI_plot.png", phosphorus_PI_plot, device = "png",
@@ -233,20 +244,26 @@ summary(nitrate_PI_model)
 
 # Plot linear model
 nitrate_PI_plot <- ggplot(data = nutrients_site_info_dist,
-                          aes(x = log10(distance_weighted_population),
-                              y = log10(mean_no3_mg_dm3))) +
-  geom_point() +
+                          aes(x = (distance_weighted_population),
+                              y = (mean_no3_mg_dm3))) +
+  geom_point(size = 6) +
   geom_smooth(method = "lm", se = TRUE) +
-  ylab("log10([Total Nitrate])") +
-  xlab("log10(IDW Population)") +
+  scale_y_log10()+
+  scale_x_log10() +
+  ylab("Nitrate (mg/L)") +
+  xlab("IDW Population (people)") +
   ggtitle("Nitrate vs. IDW Population") +
-  annotate("label", x = 3.00, y = -0.8,
-           label = paste0("p-value: ",
-                          round(summary(nitrate_PI_model)$coefficients[2, 4], 3),
-                          "\nR-squared: ",
-                          round(summary(nitrate_PI_model)$r.squared, 3), 
-                          "\nN = ", nrow(nutrients_site_info_dist))) +
-  theme_minimal()
+  geom_richtext(data = glance(nitrate_PI_model), 
+                mapping = aes(label = paste0("p-value: ",
+                                             round(p.value, 3),
+                                             "<br>R<sup>2</sup>: ",
+                                             round(r.squared, 3),
+                                             "<br> N = ", nobs), x = 6000, y = 0.15), size = 10) +
+  theme_minimal() +
+  theme(strip.text = element_markdown(),
+        axis.text = element_text(size = 28),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 34))
 
 # Export plot
 ggsave("nitrate_PI_plot.png", nitrate_PI_plot, device = "png",
@@ -269,20 +286,26 @@ summary(ammonium_PI_model)
 
 # Plot linear model
 ammonium_PI_plot <- ggplot(nutrients_site_info_dist,
-                           aes(x = log10(distance_weighted_population),
-                               y = log10(mean_nh4_mg_dm3))) +
-  geom_point() +
+                           aes(x = (distance_weighted_population),
+                               y = (mean_nh4_mg_dm3))) +
+  geom_point(size = 6) +
   geom_smooth(method = "lm", se = TRUE) +
-  ylab("log10([Total Ammonium])") +
-  xlab("log10(IDW Population)") +
+  scale_y_log10()+
+  scale_x_log10() +
+  ylab("Ammonium (mg/L)") +
+  xlab("IDW Population (people)") +
   ggtitle("Ammonium vs. IDW Population") +
-  annotate(geom = "label", x = 3.00, y = -1.25,
-           label = paste0("p-value: ",
-                          round(summary(ammonium_PI_model)$coefficients[2, 4], 3),
-                          "\nR-squared: ",
-                          round(summary(ammonium_PI_model)$r.squared, 3), 
-                          "\nN = ", nrow(nutrients_site_info_dist))) +
-  theme_minimal()
+  geom_richtext(data = glance(ammonium_PI_model), 
+                mapping = aes(label = paste0("p-value: ",
+                                             round(p.value, 3),
+                                             "<br>R<sup>2</sup>: ",
+                                             round(r.squared, 3),
+                                             "<br> N = ", nobs), x = 6000, y = 0.03), size = 10) +
+  theme_minimal() +
+  theme(strip.text = element_markdown(),
+        axis.text = element_text(size = 28),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 34))
 
 # Export plot
 ggsave(filename = "../figures/ammonium_PI_plot.png", plot = ammonium_PI_plot,
@@ -310,20 +333,26 @@ summary(n15_PI_model)
 
 # Plot linear model
 n15_PI_plot <- ggplot(data = stable_isotopes_site_info_dist[stable_isotopes_site_info_dist$Genus != "Periphyton", ],
-                      aes(x = log10(distance_weighted_population), y = (N15))) +
-  geom_point() +
+                      aes(x = (distance_weighted_population), y = (N15))) +
+  geom_point(size = 6) +
   geom_smooth(method = "lm", se = TRUE) +
+  scale_x_log10(limits = c(min(site_information_dist[,c("distance_weighted_population")]),
+                           max(site_information_dist[,c("distance_weighted_population")]))) +
   ylab(expression(paste(delta^{15}, "N (\u2030)"))) +
-  xlab("log10(IDW Population)") +
+  xlab("IDW Population (people)") +
   ggtitle(expression(paste(delta^{15}, "N \u2030  vs. IDW Population"))) +
-  xlim(c(2.5, 3.75)) +
-  annotate(geom = "label", x = 3.35, y = 7.0,
-           label = paste0("p-value: ",
-                          round(summary(n15_PI_model)$coefficients[2, 4], 3),
-                          "\nR-squared: ",
-                          round(summary(n15_PI_model)$r.squared, 3), 
-                          "\nN = ", nrow(stable_isotopes_site_info_dist[stable_isotopes$Genus != "Periphyton", ]))) +
-  theme_minimal()
+  geom_richtext(data = glance(n15_PI_model), 
+                mapping = aes(label = paste0("p-value: ",
+                                             round(p.value, 3),
+                                             "<br>R<sup>2</sup>: ",
+                                             round(r.squared, 3),
+                                             "<br> N = ", nobs), x = 2000, y = 7.0), size = 10) +
+  theme_minimal() +
+  theme(strip.text = element_markdown(),
+        axis.text = element_text(size = 28),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 34))
+  
 
 # Export plot
 ggsave(filename = "../figures/n15_PI_plot.png", plot = n15_PI_plot,
@@ -347,20 +376,25 @@ summary(c13_PI_model)
 
 # Plot linear model
 c13_PI_plot <- ggplot(stable_isotopes_site_info_dist[stable_isotopes$Genus != "Periphyton", ],
-                      aes(x = log10(distance_weighted_population), y = (C13))) +
-  geom_point() +
+                      aes(x = (distance_weighted_population), y = (C13))) +
+  geom_point(size = 6) +
   geom_smooth(method = "lm", se = TRUE) +
-  ylab(expression(paste("log10(",delta^{13}, "C (\u2030))"))) +
-  xlab("log10(IDW Population)") +
-  ggtitle(expression(paste(delta^{13}, "C \u2030 vs. IDW Population"))) +
-  xlim(c(2.5, 3.75)) +
-  annotate(geom = "label", x = 3.00, y = -17,
-           label = paste0("p-value: ",
-                          round(summary(c13_PI_model)$coefficients[2, 4], 3),
-                          "\nR-squared: ",
-                          round(summary(c13_PI_model)$r.squared, 3), 
-                          "\nN = ", nrow(stable_isotopes_site_info_dist[stable_isotopes$Genus != "Periphyton", ]))) +
-  theme_minimal()
+  scale_x_log10(limits = c(min(site_information_dist[,c("distance_weighted_population")]),
+                           max(site_information_dist[,c("distance_weighted_population")]))) +
+  ylab(expression(paste(delta^{13}, "C (\u2030)"))) +
+  xlab("IDW Population (people)") +
+  ggtitle(expression(paste(delta^{13}, "C \u2030  vs. IDW Population"))) +
+  geom_richtext(data = glance(c13_PI_model), 
+                mapping = aes(label = paste0("p-value: ",
+                                             round(p.value, 3),
+                                             "<br>R<sup>2</sup>: ",
+                                             round(r.squared, 3),
+                                             "<br> N = ", nobs), x = 2000, y = -17), size = 10) +
+  theme_minimal() +
+  theme(strip.text = element_markdown(),
+        axis.text = element_text(size = 28),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 34))
 
 # Export plot
 ggsave(filename = "../figures/c13_PI_plot.png", plot = c13_PI_plot,
@@ -387,20 +421,26 @@ summary(chlorophylla_PI_model)
 
 # Plot linear model
 chlorophylla_PI_plot <- ggplot(data = chlorophylla_site_info_dist,
-                               aes(x = log10(distance_weighted_population),
+                               aes(x = (distance_weighted_population),
                                    y = (mean_chlorophylla))) +
-  geom_point() +
+  geom_point(size = 6) +
   geom_smooth(method = "lm", se = TRUE) +
-  ylab("Chlorophyll a") +
-  xlab("log10(IDW Population)") +
+  scale_y_log10()+
+  scale_x_log10() +
+  ylab("Chlorophyll a (mg/L)") +
+  xlab("IDW Population (people)") +
   ggtitle("Chlorophyll a vs. IDW Population") +
-  annotate(geom = "label", x = 3.35, y = 1.3,
-           label = paste0("p-value: ",
-                          round(summary(chlorophylla_PI_model)$coefficients[2, 4], 3),
-                          "\nR-squared: ",
-                          round(summary(chlorophylla_PI_model)$r.squared, 3), 
-                          "\nN = ", nrow(chlorophylla_site_info_dist))) +
-  theme_minimal()
+  geom_richtext(data = glance(chlorophylla_PI_model), 
+                mapping = aes(label = paste0("p-value: ",
+                                             round(p.value, 3),
+                                             "<br>R<sup>2</sup>: ",
+                                             round(r.squared, 3),
+                                             "<br> N = ", nobs), x = 6000, y = 1), size = 10) +
+  theme_minimal() +
+  theme(strip.text = element_markdown(),
+        axis.text = element_text(size = 28),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 34))
 
 # Export plot
 ggsave(filename = "../figures/chlorophylla_PI_plot.png",
@@ -439,22 +479,34 @@ microplastics_total_PI_model <- lm((mean_total) ~
 # View model results
 summary(microplastics_total_PI_model)
 
+## During review, a reviewer suggested we trying a poisson regression for MP
+
+summary(glm((mean_total) ~ log10(distance_weighted_population),
+   family = "poisson",
+   data = microplastics_site_info_dist))
+
 # Plot linear model
 microplastics_total_PI_plot <- ggplot(data = microplastics_site_info_dist,
-                                      aes(x = log10(distance_weighted_population),
+                                      aes(x = (distance_weighted_population),
                                           y = (mean_total))) +
-  geom_point() +
+  geom_point(size = 6) +
   geom_smooth(method = "lm", se = TRUE) +
-  ylab("Mean Total Microplastics") +
-  xlab("log10(IDW Population)") +
+  scale_y_log10()+
+  scale_x_log10() +
+  ylab("Microplastics (MPs)") +
+  xlab("IDW Population (people)") +
   ggtitle("Total Microplastics vs. IDW Population") +
-  annotate(geom = "label", x = 3.00, y = 5,
-           label = paste0("p-value: ",
-                          round(summary(microplastics_total_PI_model)$coefficients[2, 4], 3),
-                          "\nR-squared: ",
-                          round(summary(microplastics_total_PI_model)$r.squared, 3), 
-                          "\nN = ", nrow(microplastics_site_info_dist))) +
-  theme_minimal()
+  geom_richtext(data = glance(microplastics_total_PI_model), 
+                mapping = aes(label = paste0("p-value: ",
+                                             round(p.value, 3),
+                                             "<br>R<sup>2</sup>: ",
+                                             round(r.squared, 3),
+                                             "<br> N = ", nobs), x = 6000, y = 1), size = 10) +
+  theme_minimal() +
+  theme(strip.text = element_markdown(),
+        axis.text = element_text(size = 28),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 34))
 
 # Export plot
 ggsave(filename = "../figures/microplastics_total_PI_plot.png",
@@ -477,22 +529,35 @@ microplastics_density_PI_model <- lm((mean_density) ~
 # View model results
 summary(microplastics_density_PI_model)
 
+## During review, a reviewer suggested we trying a poisson regression 
+## for MP Density
+
+summary(glm((mean_density) ~ log10(distance_weighted_population),
+            family = "poisson",
+            data = microplastics_site_info_dist))
+
 # Plot linear model
 microplastics_density_PI_plot <- ggplot(data = microplastics_site_info_dist,
-                                        aes(x = log10(distance_weighted_population),
+                                        aes(x = (distance_weighted_population),
                                             y = (mean_density))) +
-  geom_point() +
+  geom_point(size = 6) +
   geom_smooth(method = "lm", se = TRUE) +
-  ylab("Mean Microplastic Density") +
-  xlab("log10(IDW Population)") +
+  scale_y_log10()+
+  scale_x_log10() +
+  ylab("Microplastics Density (MPs/L)") +
+  xlab("IDW Population (people)") +
   ggtitle("Microplastics Density vs. IDW Population") +
-  annotate(geom = "label", x = 3.65, y = 0.004,
-           label = paste0("p-value: ",
-                          round(summary(microplastics_density_PI_model)$coefficients[2, 4], 3),
-                          "\nR-squared: ",
-                          round(summary(microplastics_density_PI_model)$r.squared, 3), 
-                          "\nN = ", nrow(microplastics_site_info_dist))) +
-  theme_minimal()
+  geom_richtext(data = glance(microplastics_density_PI_model), 
+                mapping = aes(label = paste0("p-value: ",
+                                             round(p.value, 3),
+                                             "<br>R<sup>2</sup>: ",
+                                             round(r.squared, 3),
+                                             "<br> N = ", nobs), x = 6000, y = 0.001), size = 10) +
+  theme_minimal() +
+  theme(strip.text = element_markdown(),
+        axis.text = element_text(size = 28),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 34))
 
 # Export plot
 ggsave(filename = "../figures/microplastics_density_PI_plot.png",
@@ -508,11 +573,14 @@ microplastics_density_permute_plots <- permute_data_analytics(data = microplasti
 
 # 8. Combine plots --------------------------------------------------------
 
-ggarrange(ppcp_PI_plot, n15_PI_plot, phosphorus_PI_plot, chlorophylla_PI_plot,
-          nitrate_PI_plot, microplastics_total_PI_plot, ammonium_PI_plot,
-          microplastics_density_PI_plot, ncol = 2, nrow = 4, labels = "AUTO") %>%
+ggarrange(nitrate_PI_plot, ammonium_PI_plot, 
+          phosphorus_PI_plot, chlorophylla_PI_plot,
+          ppcp_PI_plot, n15_PI_plot, 
+          microplastics_total_PI_plot, microplastics_density_PI_plot,
+          ncol = 2, nrow = 4, labels = "AUTO", 
+          font.label = list(size = 36)) %>%
   ggexport(filename = "../figures/combined_plot.png",
-           height = 1900, width = 1200, res = 120)
+           height = 4000, width = 2400, res = 120)
 
 combined_permuted_plots <- c(ppcp_permute_plots, n15_permute_plots, phosphorus_permute_plots, chlorophylla_permute_plots,
                              nitrate_permute_plots, ammonium_permute_plots, microplastics_total_permute_plots, 

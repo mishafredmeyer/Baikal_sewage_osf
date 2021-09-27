@@ -246,18 +246,23 @@ ggsave(filename = "../figures/periphyton_hclust_analysis.png",
        dpi = 300)
 
 # Run PERMANOVA
-adonis2(formula = periphyton_site_info_dist_wide[, 2:7]
-       ~ log10(periphyton_site_info_dist_wide[, 21]),
+adonis2(formula = periphyton_site_info_dist_wide[, c(3,5,7)]
+       ~ log10(periphyton_site_info_dist_wide[, 25]),
        data = periphyton_site_info_dist_wide,
        method = "bray", permutations = 999)
 
-adonis2(formula = periphyton_site_info_dist_wide[, 2:7]
-        ~ periphyton_site_info_dist_wide[, 22],
+adonis2(formula = periphyton_site_info_dist_wide[, c(3,5,7)]
+        ~ log10(periphyton_site_info_dist_wide[, 12]),
         data = periphyton_site_info_dist_wide,
         method = "bray", permutations = 999)
 
-simper_results <- simper(comm = periphyton_site_info_dist_wide[, 2:7],
-                         group = periphyton_site_info_dist_wide[, 22],
+adonis2(formula = periphyton_site_info_dist_wide[, c(3,5,7)]
+        ~ periphyton_site_info_dist_wide[, 26],
+        data = periphyton_site_info_dist_wide,
+        method = "bray", permutations = 999)
+
+simper_results <- simper(comm = periphyton_site_info_dist_wide[, c(3,5,7)],
+                         group = periphyton_site_info_dist_wide[, 26],
                          permutations = 999)
 
 summary(simper_results)
@@ -570,18 +575,23 @@ inverts_well_preserved_site_info_dist_wide <- full_join(x = invertebrates_well_p
 
 # Run PERMANOVA
 adonis2(formula = sqrt(inverts_well_preserved_site_info_dist_wide[, 3:14]) ~
-          inverts_well_preserved_site_info_dist_wide[, 28],
+          as.factor(inverts_well_preserved_site_info_dist_wide[, 33]),
         data = inverts_well_preserved_site_info_dist_wide,
         method = "bray")
 
 adonis2(formula = sqrt(inverts_well_preserved_site_info_dist_wide[, 3:14]) ~
-         inverts_well_preserved_site_info_dist_wide[, 29],
+         (inverts_well_preserved_site_info_dist_wide[, 32]),
        data = inverts_well_preserved_site_info_dist_wide,
        method = "bray")
 
+adonis2(formula = sqrt(inverts_well_preserved_site_info_dist_wide[, 3:14]) ~
+          log10(inverts_well_preserved_site_info_dist_wide[, 19]),
+        data = inverts_well_preserved_site_info_dist_wide,
+        method = "bray")
+
 # Run SIMPER
 simper_results <- simper(comm = sqrt(inverts_well_preserved_site_info_dist_wide[, 3:14]),
-                         group = inverts_well_preserved_site_info_dist_wide[, 29],
+                         group = inverts_well_preserved_site_info_dist_wide[, 33],
                          permutations = 999)
 
 summary(simper_results)

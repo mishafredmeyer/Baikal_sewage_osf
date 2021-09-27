@@ -199,7 +199,8 @@ unique_producer_fa <- colnames(producer_file)[grepl(pattern = "c", x = colnames(
 consumer_file <- read.csv("../cleaned_data/fatty_acid.csv") %>%
   select(site, Genus, Species, paste(unique_producer_fa)) %>%
   unite(col = "Genus_Species", c("Genus", "Species"), sep = "_") %>%
-  filter(Genus_Species %in% c("Eulimnogammarus_verrucosus	", "Eulimnogammarus_vittatus")) %>%
+  filter(Genus_Species %in% c("Eulimnogammarus_verrucosus", "Eulimnogammarus_vittatus", 
+                              "Eulimnogammarus_cyaneus", "Pallasea_cancellus")) %>%
   pivot_longer(cols = c(c14_0:c22_6w3), names_to = "fatty_acid", values_to = "concentration") %>%
   group_by(site, Genus_Species) %>%
   mutate(sum_concentration = sum(concentration),
@@ -311,7 +312,11 @@ write_JAGS_model(model_filename, resid_err, process_err, mix, source)
 
 jags.1 <- run_model(run="test", mix, source, discr, model_filename)
 
-jags.1 <- run_model(run="normal", mix, source, discr, model_filename)
+jags.1 <- run_model(run="normal", mix, source, discr, model_filename, resid_err = TRUE, process_err = FALSE)
+
+summary_stat(combine_sources(jags.1, mix, source, groups = list(diatom = c("Diatom"), 
+                                                                ulothrix = c("Ulothrix"), 
+                                                                spirogyra = c("Draparnaldia"))), meanSD = TRUE)
 
 # Now plot the prior distributions 
 

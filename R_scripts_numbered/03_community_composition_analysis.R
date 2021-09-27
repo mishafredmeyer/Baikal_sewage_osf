@@ -197,14 +197,23 @@ periphyton_IDW_pop_group_plot <- ggplot() +
                                             yes = paste0("italic(", species, ")"),
                                             no = species)), 
                   aes(x = NMDS1, y = NMDS2, label = species), 
-            size = 9, parse = TRUE) + 
-  guides(colour = guide_legend(override.aes = list(size = 10))) +
-  annotate("label", x = 0, y = -0.35, size = 10,
+            size = 14, parse = TRUE) + 
+  guides(colour = guide_legend(override.aes = list(size = 18))) +
+  annotate("label", x = 0, y = -0.35, size = 20,
            label = paste("Stress: ", round(periphyton_nmds$stress, digits = 3))) +
   theme_minimal() +
   theme(legend.position = "right",
         legend.key=element_blank(),
-        text = element_text(size = 24))
+        strip.text.x = element_text(size = 24, color = "grey80"),
+        text = element_text(size = 36),
+        axis.title.y = element_text(margin = margin(0, 20, 0, 0)),
+        axis.title.x = element_text(margin = margin(20, 0, 0, 0)),
+        panel.background = element_rect("white"),
+        panel.grid.major = element_line(colour = "grey80"),
+        panel.grid.minor = element_line(colour = "grey80"),
+        axis.ticks = element_line(color = "grey80"),
+        legend.text = element_text(size = 48),
+        legend.title = element_text(size = 48))
 
 periphyton_IDW_pop_group_plot
 
@@ -515,7 +524,7 @@ inverts_well_preserved_nmds <- ggplot() +
   scale_size_continuous(range = c(12, 28), guide = FALSE) +
   scale_color_manual(values = inferno(15)[c(3, 8, 11, 14)],
                      name = "IDW Population Grouping") +
-  guides(colour = guide_legend(override.aes = list(size = 10))) +
+  guides(colour = guide_legend(override.aes = list(size = 18))) +
   geom_text_repel(data = species_scores %>% 
                     filter(species %in% c("Eulimnogammarus", "Poekilogammarus", "Valvatidae",
                                           "Caddisflies", "Brandtia", "Planorbidae", "Baicaliidae",
@@ -534,21 +543,24 @@ inverts_well_preserved_nmds <- ggplot() +
                                             yes = paste0("italic(", species, ")"),
                                             no = species)),
                   aes(x = NMDS1, y = NMDS2, label = species), 
-                  size = 8, parse = TRUE) + 
+                  size = 14, parse = TRUE) + 
   coord_equal() +
-  annotate("label", x = -0.15, y = 0.4, size = 10,
+  annotate("label", x = -0.15, y = 0.4, size = 20,
            label = paste("Stress: ",
                          round(invertebrates_metaMDS$stress, digits = 3))) +
+  theme_minimal() +
   theme(legend.position = "right",
         legend.key=element_blank(),
-        strip.text.x = element_text(size = 20, color = "grey80"),
-        text = element_text(size = 24),
+        strip.text.x = element_text(size = 24, color = "grey80"),
+        text = element_text(size = 36),
         axis.title.y = element_text(margin = margin(0, 20, 0, 0)),
         axis.title.x = element_text(margin = margin(20, 0, 0, 0)),
         panel.background = element_rect("white"),
         panel.grid.major = element_line(colour = "grey80"),
         panel.grid.minor = element_line(colour = "grey80"),
-        axis.ticks = element_line(color = "grey80"))
+        axis.ticks = element_line(color = "grey80"), 
+        legend.text = element_text(size = 48),
+        legend.title = element_text(size = 48))
 
 inverts_well_preserved_nmds
 
@@ -556,6 +568,13 @@ inverts_well_preserved_nmds
 ggsave(filename = "../figures/inverts_well_preserved_nmds.png",
        plot = inverts_well_preserved_nmds, device = "png",
        height = 10, width = 20, dpi = 300)
+
+ggarrange(periphyton_IDW_pop_group_plot, inverts_well_preserved_nmds, 
+          ncol = 2, nrow = 1, common.legend = TRUE, legend = "bottom", 
+          labels = "AUTO", font.label = list(size = 44)) %>%
+  ggexport(filename = "../figures/combined_nmds_plot.png",
+           height = 2000, width = 5000, 
+           res = 120)
 
 # Re-join the site_information and distance data back in with invert data
 inverts_well_preserved_site_info_dist_wide <- full_join(x = invertebrates_well_preserved_wide,

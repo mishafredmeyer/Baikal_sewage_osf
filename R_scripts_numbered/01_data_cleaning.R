@@ -78,7 +78,8 @@ site_information_orig <- read.csv(file = "../clean_disaggregated_data/site_infor
 # Select columns of interest
 site_information <- site_information_orig %>%
   select(site, lat, long, depth_m, distance_to_shore_m, air_temp_celsius, 
-         surface_temp_celsius, mid_temp_celsius, bottom_temp_celsius) 
+         surface_temp_celsius, mid_temp_celsius, bottom_temp_celsius, year, 
+         month, day, time) 
 
 head(site_information)
 
