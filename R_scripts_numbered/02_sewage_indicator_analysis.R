@@ -205,7 +205,7 @@ phosphorus_PI_plot <- ggplot(data = nutrients_site_info_dist,
                              aes(x = (distance_weighted_population),
                                  y = (mean_tp_mg_dm3))) +
   geom_point(size = 6) +
-  geom_smooth(method = "lm", se = TRUE) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed") +
   scale_y_log10()+
   scale_x_log10() +
   ylab("Phosphorus (mg/L)") +
@@ -247,7 +247,7 @@ nitrate_PI_plot <- ggplot(data = nutrients_site_info_dist,
                           aes(x = (distance_weighted_population),
                               y = (mean_no3_mg_dm3))) +
   geom_point(size = 6) +
-  geom_smooth(method = "lm", se = TRUE) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed") +
   scale_y_log10()+
   scale_x_log10() +
   ylab("Nitrate (mg/L)") +
@@ -289,7 +289,7 @@ ammonium_PI_plot <- ggplot(nutrients_site_info_dist,
                            aes(x = (distance_weighted_population),
                                y = (mean_nh4_mg_dm3))) +
   geom_point(size = 6) +
-  geom_smooth(method = "lm", se = TRUE) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed") +
   scale_y_log10()+
   scale_x_log10() +
   ylab("Ammonium (mg/L)") +
@@ -378,7 +378,7 @@ summary(c13_PI_model)
 c13_PI_plot <- ggplot(stable_isotopes_site_info_dist[stable_isotopes$Genus != "Periphyton", ],
                       aes(x = (distance_weighted_population), y = (C13))) +
   geom_point(size = 6) +
-  geom_smooth(method = "lm", se = TRUE) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed") +
   scale_x_log10(limits = c(min(site_information_dist[,c("distance_weighted_population")]),
                            max(site_information_dist[,c("distance_weighted_population")]))) +
   ylab(expression(paste(delta^{13}, "C (\u2030)"))) +
@@ -424,7 +424,7 @@ chlorophylla_PI_plot <- ggplot(data = chlorophylla_site_info_dist,
                                aes(x = (distance_weighted_population),
                                    y = (mean_chlorophylla))) +
   geom_point(size = 6) +
-  geom_smooth(method = "lm", se = TRUE) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed") +
   scale_y_log10()+
   scale_x_log10() +
   ylab("Chlorophyll a (mg/L)") +
@@ -490,7 +490,7 @@ microplastics_total_PI_plot <- ggplot(data = microplastics_site_info_dist,
                                       aes(x = (distance_weighted_population),
                                           y = (mean_total))) +
   geom_point(size = 6) +
-  geom_smooth(method = "lm", se = TRUE) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed") +
   scale_y_log10()+
   scale_x_log10() +
   ylab("Microplastics (MPs)") +
@@ -541,7 +541,7 @@ microplastics_density_PI_plot <- ggplot(data = microplastics_site_info_dist,
                                         aes(x = (distance_weighted_population),
                                             y = (mean_density))) +
   geom_point(size = 6) +
-  geom_smooth(method = "lm", se = TRUE) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed") +
   scale_y_log10()+
   scale_x_log10() +
   ylab("Microplastics Density (MPs/L)") +

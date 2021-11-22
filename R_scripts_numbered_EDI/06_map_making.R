@@ -168,7 +168,7 @@ listvyanka <- ggplot() +
     cachedir = "data/map_tiles/") +
   geom_sf(data = baikal_shapefile %>%
             filter(Name == "Listvyanka"), 
-          color = "black", alpha = 0.7, fill = viridis(10)[1]) +
+          color = "black", alpha = 0.4, fill = viridis(10)[1]) +
   annotation_scale(location = "bl") +
   xlab("") +
   ylab("") +
@@ -187,7 +187,7 @@ bolshie_koty <- ggplot() +
     cachedir = "data/map_tiles/") +
   geom_sf(data = baikal_shapefile %>%
             filter(Name == "Bolshie Koty"), 
-          color = "black", alpha = 0.7, fill = viridis(10)[1]) +
+          color = "black", alpha = 0.4, fill = viridis(10)[1]) +
   annotation_scale(location = "br") +
   xlab("") +
   ylab("") +
@@ -205,7 +205,7 @@ bolshoe_goloustnoe <- ggplot() +
     cachedir = "data/map_tiles/") +
   geom_sf(data = baikal_shapefile %>%
             filter(Name == "Bolshoe Goloustnoe"), 
-          color = "black", alpha = 0.7, fill = viridis(10)[1]) +
+          color = "black", alpha = 0.4, fill = viridis(10)[1]) +
   annotation_scale(location = "br") +
   xlab("") +
   ylab("") +
@@ -224,8 +224,8 @@ arranged_maps <- ggarrange(listvyanka, bolshie_koty, bolshoe_goloustnoe,
                            font.label = list(size = 20))
 
 baikal_map <- ggdraw() +
-  draw_plot(zoomed_in_baikal_map) +
-  draw_plot(plot = full_baikal_map,
+  draw_plot(zoom_map) +
+  draw_plot(plot = inset_map,
             x = -0.09, y = 0.54, width = .7, height = .4, scale = 1) 
 
 ggsave(filename = "../figures/baikal_map.png", plot = baikal_map, device = "png",
