@@ -1,0 +1,85 @@
+
+################################################################################
+# Gelman-Rubin Diagnostic
+################################################################################
+
+Generally the Gelman diagnostic should be < 1.05
+
+
+Out of 16 variables: 0 > 1.01
+
+                      
+0 > 1.05
+
+                      
+0 > 1.1
+
+
+The worst variables are:
+
+            Point est. Upper C.I.
+p.global[3]   1.004476   1.014651
+p.global[1]   1.004279   1.013281
+loglik[7]     1.002670   1.008489
+loglik[4]     1.002356   1.005988
+loglik[10]    1.001977   1.008120
+loglik[6]     1.001548   1.007624
+deviance      1.001164   1.002699
+loglik[11]    1.001006   1.002441
+loglik[3]     1.000623   1.001329
+loglik[5]     1.000408   1.003596
+
+
+And here are the Gelman diagnostics for all variables:
+
+            Point est. Upper C.I.
+deviance     1.0011639  1.0026994
+loglik[1]    0.9995099  1.0004188
+loglik[2]    0.9993634  0.9995365
+loglik[3]    1.0006234  1.0013292
+loglik[4]    1.0023563  1.0059882
+loglik[5]    1.0004079  1.0035960
+loglik[6]    1.0015484  1.0076238
+loglik[7]    1.0026696  1.0084891
+loglik[8]    0.9999915  1.0017321
+loglik[9]    0.9998382  1.0017500
+loglik[10]   1.0019773  1.0081204
+loglik[11]   1.0010062  1.0024413
+loglik[12]   0.9998165  1.0009106
+p.global[1]  1.0042792  1.0132814
+p.global[2]  1.0002024  1.0010696
+p.global[3]  1.0044761  1.0146513
+
+################################################################################
+# Geweke Diagnostic
+################################################################################
+
+The Geweke diagnostic is a standard z-score, so we'd expect 5% to be outside +/-1.96
+Number of variables outside +/-1.96 in each chain (out of 
+16
+):
+
+
+       Chain 1 Chain 2 Chain 3
+Geweke       0       3       0
+
+
+And here are the Geweke diagnostics for all variables:
+
+            chain1 chain2 chain3
+deviance    -0.846  1.131  0.806
+loglik[1]   -1.406  0.924 -0.312
+loglik[2]   -1.589 -0.585 -0.291
+loglik[3]    0.725 -0.840 -0.120
+loglik[4]    1.817 -0.656 -0.089
+loglik[5]    0.602  0.266  0.160
+loglik[6]    1.707 -2.107 -0.775
+loglik[7]    1.392  1.386 -0.008
+loglik[8]    0.501 -3.400 -0.430
+loglik[9]    0.917 -0.347 -0.209
+loglik[10]   1.468 -1.475 -1.570
+loglik[11]   0.120 -0.901 -0.785
+loglik[12]   0.955 -2.090 -0.747
+p.global[1] -0.773 -0.294  1.429
+p.global[2] -0.241 -0.180 -0.848
+p.global[3]  1.034  0.510 -0.594

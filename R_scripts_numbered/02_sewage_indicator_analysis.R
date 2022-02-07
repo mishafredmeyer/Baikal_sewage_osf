@@ -576,16 +576,16 @@ microplastics_density_permute_plots <- permute_data_analytics(data = microplasti
 ggarrange(nitrate_PI_plot, ammonium_PI_plot, 
           phosphorus_PI_plot, chlorophylla_PI_plot,
           ppcp_PI_plot, n15_PI_plot, 
-          microplastics_total_PI_plot, microplastics_density_PI_plot,
+          microplastics_density_PI_plot,
           ncol = 2, nrow = 4, labels = "AUTO", 
           font.label = list(size = 36)) %>%
   ggexport(filename = "../figures/combined_plot.png",
            height = 4000, width = 2400, res = 120)
 
 combined_permuted_plots <- c(ppcp_permute_plots, n15_permute_plots, phosphorus_permute_plots, chlorophylla_permute_plots,
-                             nitrate_permute_plots, ammonium_permute_plots, microplastics_total_permute_plots, 
+                             nitrate_permute_plots, ammonium_permute_plots, 
                              microplastics_density_permute_plots)
 
-ggarrange(plotlist =  combined_permuted_plots, ncol = 2, nrow = 8) %>%
+ggarrange(plotlist =  combined_permuted_plots, ncol = 2, nrow = 7) %>%
   ggexport(filename = "../figures/permuted_combined_plot.png",
            height = 1900, width = 1600, res = 120)

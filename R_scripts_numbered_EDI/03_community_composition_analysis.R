@@ -393,7 +393,7 @@ invertebrates_well_preserved_long_ordered <- invertebrates_well_preserved_long %
 invertebrate_well_preserved_plot <- invertebrates_well_preserved_long_ordered %>%
   mutate(Group = ifelse(test = Genus %in% amphipods,
                         yes = "Amphipod", no = Genus),
-         Group = ifelse(test = Genus %in% molluscs,
+         Group = ifelse(test = Genus %in% c(molluscs, "Maackia"),
                         yes = "Mollusc", no = Group),
          Genus = factor(x = Genus,
                         levels = c("Brandtia", "Cryptoropus", "Eulimnogammarus",
@@ -403,14 +403,14 @@ invertebrate_well_preserved_plot <- invertebrates_well_preserved_long_ordered %>
                                    "Asellidae", "Caddisflies", "Flatworms",
                                    "Leeches"))) %>%
   ggplot() +
-  geom_bar(aes(x = site, y = total_site), alpha = 0.5, stat = "identity") +
+  #geom_bar(aes(x = site, y = total_site), alpha = 0.5, stat = "identity") +
   geom_bar(aes(x = site, y = total_Genus, fill = as.factor(Group)),
            stat = "identity") +
   scale_fill_viridis_d(option = "inferno") +
-  facet_wrap(~ Genus) +
+  facet_wrap(~ Genus, scales = "free") +
   xlab("Site (Arranged by increasing IDW population)") +
   ylab("Number of Individuals") +
-  theme_classic() +
+  theme_bw() +
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45, hjust = 1)) +
   theme(plot.title = element_text(size = 20),
@@ -418,7 +418,7 @@ invertebrate_well_preserved_plot <- invertebrates_well_preserved_long_ordered %>
         strip.background = element_rect(fill = "white"),
         panel.background = element_rect(color = "black"),
         axis.title = element_text(size = 20),
-        axis.text.x = element_text(size = 20),
+        axis.text.x = element_text(size = 17),
         axis.text.y = element_text(size = 20),
         axis.title.y = element_text(margin = margin(0, 20, 0, 0)),
         axis.title.x = element_text(margin = margin(20, 0, 0, 0)),

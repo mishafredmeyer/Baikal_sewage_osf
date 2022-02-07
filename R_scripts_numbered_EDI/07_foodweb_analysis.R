@@ -74,7 +74,7 @@ foodweb_plot <- ggplot(data = foodweb_data,
                     ymax = mean_N15+sd_N15), size = 1) +
   geom_errorbarh(aes(xmin = mean_C13-sd_C13, 
                      xmax = mean_C13+sd_C13), size = 1) +
-  labs(color = "Taxon + IDW Population Group") +
+  labs(color = "Taxon + \nIDW Population Group") +
   scale_color_viridis_d(begin = 0,
                         end = 0.9,
                         option = "magma") +
@@ -83,12 +83,12 @@ foodweb_plot <- ggplot(data = foodweb_data,
   ylab(expression(paste(delta^{15}, "N (\u2030)"))) +
   theme_minimal() +
   theme(legend.position = "bottom",
-        title = element_text(size = 20),
-        axis.text = element_text(size = 20),
-        axis.title = element_text(size = 20),
-        legend.text = element_markdown(size = 16),
+        title = element_text(size = 28),
+        axis.text = element_text(size = 24),
+        axis.title = element_text(size = 24),
+        legend.text = element_markdown(size = 18),
         legend.key.height = unit(0.5, "in"),
-        legend.key.width = unit(0.25, "in")) +
+        legend.key.width = unit(0.25, "in"))+
   guides(color = guide_legend(nrow = 3))
 
 
@@ -199,7 +199,7 @@ unique_producer_fa <- colnames(producer_file)[grepl(pattern = "c", x = colnames(
 consumer_file <- read.csv("../cleaned_data/fatty_acid.csv") %>%
   select(site, Genus, Species, paste(unique_producer_fa)) %>%
   unite(col = "Genus_Species", c("Genus", "Species"), sep = "_") %>%
-  filter(Genus_Species %in% c("Eulimnogammarus_verrucosus	", "Eulimnogammarus_vittatus")) %>%
+  filter(Genus_Species %in% c("Eulimnogammarus_verrucosus", "Eulimnogammarus_vittatus")) %>%
   pivot_longer(cols = c(c14_0:c22_6w3), names_to = "fatty_acid", values_to = "concentration") %>%
   group_by(site, Genus_Species) %>%
   mutate(sum_concentration = sum(concentration),
@@ -250,7 +250,8 @@ tdf <- tdf_raw %>%
   pivot_longer(cols = c(Meanc14_0:SDc22_6w3), names_to = "fatty_acid", values_to = "prop") %>%
   separate(col = "fatty_acid", into = c("stat", "fatty_acid"), sep = "c", remove = TRUE) %>%
   group_by(stat, fatty_acid) %>%
-  mutate(mean_fa = mean(prop)) %>%
+  mutate(mean_fa = mean(prop, na.rm = TRUE),
+         mean_fa = ifelse(!is.finite(mean_fa), 0, mean_fa)) %>%
   select(-prop) %>%
   unite(col = "fatty_acid", stat:fatty_acid, remove = TRUE, sep = "c") %>%
   pivot_wider(names_from = fatty_acid, values_from = mean_fa) %>%
@@ -313,6 +314,14 @@ jags.1 <- run_model(run="test", mix, source, discr, model_filename)
 
 jags.1 <- run_model(run="normal", mix, source, discr, model_filename)
 
+p_outputs <- data.frame(jags.1$BUGSoutput$sims.list$p.global) %>%
+  rename("Diatom" = X1,
+         "Draparnaldia" = X2,
+         "Ulothrix" = X3) %>%
+  pivot_longer(cols = c(Diatom:Ulothrix), names_to = "resources", values_to = "posteriors") %>%
+  group_by(resources) %>%
+  summarize(mean_posterior = mean(posteriors)) 
+
 # Now plot the prior distributions 
 
 p_outputs <- data.frame(jags.1$BUGSoutput$sims.list$p.global) %>%
@@ -334,10 +343,10 @@ posterior_plot <- ggplot(p_outputs) +
   ylab("Scaled frequency of posterior") +
   theme_minimal() +
   theme(legend.position = "bottom",
-        title = element_text(size = 20),
-        axis.text = element_text(size = 20),
-        axis.title = element_text(size = 20),
-        legend.text = element_markdown(size = 16),
+        title = element_text(size = 28),
+        axis.text = element_text(size = 22),
+        axis.title = element_text(size = 24),
+        legend.text = element_markdown(size = 18),
         legend.key.height = unit(0.5, "in"),
         legend.key.width = unit(0.25, "in"))
 
@@ -366,6 +375,329 @@ arranged_plots <- ggarrange(foodweb_plot, posterior_plot,
 
 ggsave(filename = "sia_mixsiar_results.png", plot = arranged_plots, device = "png", 
        path = "../figures/", width = 24, height = 12, units = "in")
+
+## Get summary statistics
+
+output_JAGS(jags.1, mix, source)
+
+## Assess the model fit
+
+producers_whole_long <- producers_whole %>%
+  pivot_longer(cols = c(c14_0:std22_6w3),
+               names_to = "fatty_acid", values_to = "props") %>%
+  mutate(fatty_acid = ifelse(grepl(pattern = "c", x = fatty_acid),
+                             yes = paste0("Mean", fatty_acid),
+                             no = fatty_acid),
+         fatty_acid = ifelse(grepl(pattern = "std", x = fatty_acid),
+                             yes = gsub(pattern = "std", 
+                                        replacement = "SDc", 
+                                        x = fatty_acid),
+                             no = fatty_acid)) %>%
+  inner_join(x = ., 
+             y = tdf %>%
+               rename(taxon = diet_type) %>%
+               pivot_longer(cols = c(Meanc14_0:SDc22_6w3),
+                            names_to = "fatty_acid",
+                            values_to = "tdf_value")) %>%
+  filter(grepl(pattern = "Meanc", x = fatty_acid)) %>%
+  inner_join(x = .,
+             y = p_outputs %>%
+               rename(taxon = resources) %>%
+               group_by(taxon) %>%
+               summarize(mean_posterior = mean(posteriors)) %>%
+               mutate(taxon = gsub(pattern = "*", replacement = "", 
+                                   x = taxon, fixed = TRUE),
+                      taxon = gsub(pattern = "spp.", replacement = "", 
+                                   x = taxon, fixed = TRUE),
+                      taxon = trimws(taxon))) %>%
+  mutate(final_prop = (props + tdf_value) * mean_posterior) %>%
+  group_by(fatty_acid) %>%
+  summarize(total_prop = sum(final_prop)) %>%
+  inner_join(x = .,
+             y = consumer_file %>%
+               select(c14_0:c22_6w3) %>%
+               pivot_longer(cols = c(c14_0:c22_6w3), 
+                            names_to = "fatty_acid", 
+                            values_to = "props_actual") %>%
+               #group_by(fatty_acid) %>%
+               #summarize(props_actual = mean(props_actual)) %>%
+               ungroup() %>%
+               mutate(fatty_acid = paste0("Mean", fatty_acid))) %>%
+  ungroup() %>%
+  mutate(delta_squared = (total_prop - props_actual)^2) %>%
+  summarize(rmse = sqrt(sum(delta_squared)/15))
+
+
+rmse <- producers_whole %>%
+  pivot_longer(cols = c(c14_0:std22_6w3),
+               names_to = "fatty_acid", values_to = "props") %>%
+  mutate(fatty_acid = ifelse(grepl(pattern = "c", x = fatty_acid),
+                             yes = paste0("Mean", fatty_acid),
+                             no = fatty_acid),
+         fatty_acid = ifelse(grepl(pattern = "std", x = fatty_acid),
+                             yes = gsub(pattern = "std", 
+                                        replacement = "SDc", 
+                                        x = fatty_acid),
+                             no = fatty_acid)) %>%
+  separate(col = fatty_acid, 
+           into = c("statistic", "fatty_acid"), 
+           sep = "c") %>%
+  mutate(fatty_acid = paste0("Meanc", fatty_acid)) %>%
+  pivot_wider(names_from = "statistic", values_from = "props") %>%
+  inner_join(x = ., 
+             y = tdf %>%
+               rename(taxon = diet_type) %>%
+               pivot_longer(cols = c(Meanc14_0:SDc22_6w3),
+                            names_to = "fatty_acid",
+                            values_to = "tdf_value")) %>%
+  #filter(grepl(pattern = "Meanc", x = fatty_acid)) %>%
+  inner_join(x = .,
+             y = p_outputs %>%
+               rename(taxon = resources) %>%
+               group_by(taxon) %>%
+               summarize(mean_posterior = mean(posteriors)) %>%
+               mutate(taxon = gsub(pattern = "*", replacement = "", 
+                                   x = taxon, fixed = TRUE),
+                      taxon = gsub(pattern = "spp.", replacement = "", 
+                                   x = taxon, fixed = TRUE),
+                      taxon = trimws(taxon))) %>%
+  mutate(final_prop = (Mean + tdf_value) * mean_posterior) %>%
+  group_by(fatty_acid) %>%
+  summarize(total_prop = sum(final_prop)) %>%
+  inner_join(x = .,
+             y = consumer_file %>%
+               select(c14_0:c22_6w3) %>%
+               pivot_longer(cols = c(c14_0:c22_6w3), 
+                            names_to = "fatty_acid", 
+                            values_to = "props_actual") %>%
+               #group_by(fatty_acid) %>%
+               #summarize(props_actual = mean(props_actual)) %>%
+               ungroup() %>%
+               mutate(fatty_acid = paste0("Mean", fatty_acid))) %>%
+  ungroup() %>%
+  mutate(delta_squared = (total_prop - props_actual)^2) %>%
+  summarize(rmse = sqrt(sum(delta_squared)/15)) 
+
+comparison_data <- rmse_plussd <- producers_whole %>%
+  pivot_longer(cols = c(c14_0:std22_6w3),
+               names_to = "fatty_acid", values_to = "props") %>%
+  mutate(fatty_acid = ifelse(grepl(pattern = "c", x = fatty_acid),
+                             yes = paste0("Mean", fatty_acid),
+                             no = fatty_acid),
+         fatty_acid = ifelse(grepl(pattern = "std", x = fatty_acid),
+                             yes = gsub(pattern = "std", 
+                                        replacement = "SDc", 
+                                        x = fatty_acid),
+                             no = fatty_acid)) %>%
+  separate(col = fatty_acid, 
+           into = c("statistic", "fatty_acid"), 
+           sep = "c") %>%
+  mutate(fatty_acid = paste0("Meanc", fatty_acid)) %>%
+  pivot_wider(names_from = "statistic", values_from = "props") %>%
+  inner_join(x = ., 
+             y = tdf %>%
+               rename(taxon = diet_type) %>%
+               pivot_longer(cols = c(Meanc14_0:SDc22_6w3),
+                            names_to = "fatty_acid",
+                            values_to = "tdf_value")) %>%
+  #filter(grepl(pattern = "Meanc", x = fatty_acid)) %>%
+  inner_join(x = .,
+             y = p_outputs %>%
+               rename(taxon = resources) %>%
+               group_by(taxon) %>%
+               summarize(mean_posterior = mean(posteriors)) %>%
+               mutate(taxon = gsub(pattern = "*", replacement = "", 
+                                   x = taxon, fixed = TRUE),
+                      taxon = gsub(pattern = "spp.", replacement = "", 
+                                   x = taxon, fixed = TRUE),
+                      taxon = trimws(taxon))) %>%
+  mutate(final_prop = (Mean + SD + tdf_value) * mean_posterior) %>%
+  group_by(fatty_acid) %>%
+  summarize(total_prop = sum(final_prop)) %>%
+  inner_join(x = .,
+             y = consumer_file %>%
+               select(c14_0:c22_6w3) %>%
+               pivot_longer(cols = c(c14_0:c22_6w3), 
+                            names_to = "fatty_acid", 
+                            values_to = "props_actual") %>%
+               #group_by(fatty_acid) %>%
+               #summarize(props_actual = mean(props_actual)) %>%
+               ungroup() %>%
+               mutate(fatty_acid = paste0("Mean", fatty_acid)))
+
+individual_one_one_plot <- ggplot(comparison_data, aes(x = total_prop/100,
+                            y = props_actual/100)) +
+  geom_point(size = 3) +
+  geom_abline(aes(slope = 1, intercept = 0)) +
+  # geom_text_repel(data = comparison_data %>%
+  #                   filter(fatty_acid %in% c("Meanc18_3w3", 
+  #                                            "Meanc18_2w6", 
+  #                                            "Meanc20_5w3",
+  #                                            "Meanc18_1w9")) %>%
+  #                   mutate(fatty_acid = gsub(pattern = "Meanc", replacement = "", 
+  #                                         x = fatty_acid),
+  #                          fatty_acid = gsub(pattern = "_", replacement = ":", 
+  #                                         x = fatty_acid),
+  #                          fatty_acid = gsub(pattern = "w", replacement = "\U03C9", 
+  #                                         x = fatty_acid)), 
+  #                 aes(x = total_prop/100, y = props_actual/100, label = fatty_acid),
+  #                 size = 6, nudge_y = 0.03) +
+  annotate("label", x = 0.3, y = 0.27,
+           label = paste("RMSE: ",
+                         round(rmse$rmse/100, digits = 3)),
+           size = 10) +
+  geom_smooth(method = "lm", se = FALSE) +
+  ylab("Actual Fatty Acid Proportion") +
+  xlab("Predicted Fatty Acid Proportion") +
+  theme_bw() +
+  theme(legend.position = "bottom",
+        title = element_text(size = 20),
+        axis.text = element_text(size = 16),
+        axis.title = element_text(size = 18),
+        legend.text = element_markdown(size = 12))
+  
+ggsave(filename = "mixsiar_individual_one_to_one_plot.png", plot = individual_one_one_plot, 
+       device = "png", path = "../figures/", width = 7, height = 5, units = "in")
+
+rmse <- producers_whole %>%
+  pivot_longer(cols = c(c14_0:std22_6w3),
+               names_to = "fatty_acid", values_to = "props") %>%
+  mutate(fatty_acid = ifelse(grepl(pattern = "c", x = fatty_acid),
+                             yes = paste0("Mean", fatty_acid),
+                             no = fatty_acid),
+         fatty_acid = ifelse(grepl(pattern = "std", x = fatty_acid),
+                             yes = gsub(pattern = "std", 
+                                        replacement = "SDc", 
+                                        x = fatty_acid),
+                             no = fatty_acid)) %>%
+  separate(col = fatty_acid, 
+           into = c("statistic", "fatty_acid"), 
+           sep = "c") %>%
+  mutate(fatty_acid = paste0("Meanc", fatty_acid)) %>%
+  pivot_wider(names_from = "statistic", values_from = "props") %>%
+  inner_join(x = ., 
+             y = tdf %>%
+               rename(taxon = diet_type) %>%
+               pivot_longer(cols = c(Meanc14_0:SDc22_6w3),
+                            names_to = "fatty_acid",
+                            values_to = "tdf_value")) %>%
+  #filter(grepl(pattern = "Meanc", x = fatty_acid)) %>%
+  inner_join(x = .,
+             y = p_outputs %>%
+               rename(taxon = resources) %>%
+               group_by(taxon) %>%
+               summarize(mean_posterior = mean(posteriors)) %>%
+               mutate(taxon = gsub(pattern = "*", replacement = "", 
+                                   x = taxon, fixed = TRUE),
+                      taxon = gsub(pattern = "spp.", replacement = "", 
+                                   x = taxon, fixed = TRUE),
+                      taxon = trimws(taxon))) %>%
+  mutate(final_prop = (Mean + tdf_value) * mean_posterior) %>%
+  group_by(fatty_acid) %>%
+  summarize(total_prop = sum(final_prop)) %>%
+  inner_join(x = .,
+             y = consumer_file %>%
+               select(c14_0:c22_6w3) %>%
+               pivot_longer(cols = c(c14_0:c22_6w3), 
+                            names_to = "fatty_acid", 
+                            values_to = "props_actual") %>%
+               group_by(fatty_acid) %>%
+               summarize(props_actual = mean(props_actual)) %>%
+               ungroup() %>%
+               mutate(fatty_acid = paste0("Mean", fatty_acid))) %>%
+  ungroup() %>%
+  mutate(delta_squared = (total_prop - props_actual)^2) %>%
+  summarize(rmse = sqrt(sum(delta_squared)/15)) 
+
+comparison_data <- producers_whole %>%
+  pivot_longer(cols = c(c14_0:std22_6w3),
+               names_to = "fatty_acid", values_to = "props") %>%
+  mutate(fatty_acid = ifelse(grepl(pattern = "c", x = fatty_acid),
+                             yes = paste0("Mean", fatty_acid),
+                             no = fatty_acid),
+         fatty_acid = ifelse(grepl(pattern = "std", x = fatty_acid),
+                             yes = gsub(pattern = "std", 
+                                        replacement = "SDc", 
+                                        x = fatty_acid),
+                             no = fatty_acid)) %>%
+  separate(col = fatty_acid, 
+           into = c("statistic", "fatty_acid"), 
+           sep = "c") %>%
+  mutate(fatty_acid = paste0("Meanc", fatty_acid)) %>%
+  pivot_wider(names_from = "statistic", values_from = "props") %>%
+  inner_join(x = ., 
+             y = tdf %>%
+               rename(taxon = diet_type) %>%
+               pivot_longer(cols = c(Meanc14_0:SDc22_6w3),
+                            names_to = "fatty_acid",
+                            values_to = "tdf_value")) %>%
+  #filter(grepl(pattern = "Meanc", x = fatty_acid)) %>%
+  inner_join(x = .,
+             y = p_outputs %>%
+               rename(taxon = resources) %>%
+               group_by(taxon) %>%
+               summarize(mean_posterior = mean(posteriors)) %>%
+               mutate(taxon = gsub(pattern = "*", replacement = "", 
+                                   x = taxon, fixed = TRUE),
+                      taxon = gsub(pattern = "spp.", replacement = "", 
+                                   x = taxon, fixed = TRUE),
+                      taxon = trimws(taxon))) %>%
+  mutate(final_prop = (Mean + SD + tdf_value) * mean_posterior) %>%
+  group_by(fatty_acid) %>%
+  summarize(total_prop = sum(final_prop)) %>%
+  inner_join(x = .,
+             y = consumer_file %>%
+               select(c14_0:c22_6w3) %>%
+               pivot_longer(cols = c(c14_0:c22_6w3), 
+                            names_to = "fatty_acid", 
+                            values_to = "props_actual") %>%
+               group_by(fatty_acid) %>%
+               summarize(props_actual = mean(props_actual)) %>%
+               ungroup() %>%
+               mutate(fatty_acid = paste0("Mean", fatty_acid)))
+
+grouped_one_one_plot <- ggplot(comparison_data, aes(x = total_prop/100,
+                                                       y = props_actual/100)) +
+  geom_point(size = 3) +
+  geom_abline(aes(slope = 1, intercept = 0)) +
+  geom_text_repel(data = comparison_data %>%
+                    filter(fatty_acid %in% c("Meanc18_3w3",
+                                             "Meanc18_2w6",
+                                             "Meanc20_5w3",
+                                             "Meanc18_1w9")) %>%
+                    mutate(fatty_acid = gsub(pattern = "Meanc", replacement = "",
+                                          x = fatty_acid),
+                           fatty_acid = gsub(pattern = "_", replacement = ":",
+                                          x = fatty_acid),
+                           fatty_acid = gsub(pattern = "w", replacement = "\U03C9",
+                                          x = fatty_acid)),
+                 aes(x = total_prop/100, y = props_actual/100, label = fatty_acid),
+                 size = 6, box.padding = 1.5) +
+annotate("label", x = 0.3, y = 0.27,
+         label = paste("RMSE: ",
+                       round(rmse$rmse/100, digits = 3)),
+         size = 10) +
+  geom_smooth(method = "lm", se = FALSE) +
+  ylab("Actual Fatty Acid Proportion") +
+  xlab("Predicted Fatty Acid Proportion") +
+  theme_bw() +
+  theme(legend.position = "bottom",
+        title = element_text(size = 20),
+        axis.text = element_text(size = 16),
+        axis.title = element_text(size = 18),
+        legend.text = element_markdown(size = 12))
+
+ggsave(filename = "mixsiar_grouped_one_to_one_plot.png", plot =grouped_one_one_plot, 
+       device = "png", path = "../figures/", width = 7, height = 5, units = "in")
+
+arranged_plots <- ggarrange(individual_one_one_plot, grouped_one_one_plot,
+                            font.label = list(size = 22, face = "bold"), 
+                            ncol = 1, nrow = 2,
+                            labels = "AUTO")
+
+ggsave(filename = "combined_one_one_plots.png", 
+       plot = arranged_plots, device = "png", 
+       path = "../figures/", width = 7, height = 10, units = "in")
 
 
 # 6.5: Sensitivty Analysis ------------------------------------------------
@@ -436,6 +768,8 @@ write_JAGS_model(model_filename, resid_err, process_err, mix, source)
 jags.1 <- run_model(run="test", mix, source, discr, model_filename)
 
 jags.1 <- run_model(run="normal", mix, source, discr, model_filename)
+
+output_model <- output_JAGS(jags.1 = jags.1, mix = mix, source = source, output_options = )
 
 # Now plot the prior distributions 
 

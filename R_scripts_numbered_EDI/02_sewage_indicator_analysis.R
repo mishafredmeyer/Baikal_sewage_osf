@@ -508,9 +508,10 @@ microplastics_density_permute_plots <- permute_data_analytics(data = microplasti
 
 # 8. Combine plots --------------------------------------------------------
 
-ggarrange(ppcp_PI_plot, n15_PI_plot, phosphorus_PI_plot, chlorophylla_PI_plot,
-          nitrate_PI_plot, microplastics_total_PI_plot, ammonium_PI_plot,
-          microplastics_density_PI_plot, ncol = 2, nrow = 4, labels = "AUTO") %>%
+ggarrange(ppcp_PI_plot, n15_PI_plot, phosphorus_PI_plot, 
+          chlorophylla_PI_plot, nitrate_PI_plot, 
+          ammonium_PI_plot, microplastics_density_PI_plot, 
+          ncol = 2, nrow = 4, labels = "AUTO") %>%
   ggexport(filename = "../figures/combined_plot.png",
            height = 1900, width = 1200, res = 120)
 
