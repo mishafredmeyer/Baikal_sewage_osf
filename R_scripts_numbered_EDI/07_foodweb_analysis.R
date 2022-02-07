@@ -382,6 +382,18 @@ output_JAGS(jags.1, mix, source)
 
 ## Assess the model fit
 
+## This model fitting procedure is inspired by work from Tanentzap et al (2017)
+## (DOI: 10.1126/sciadv.1601765). This workflow effectively calculates what 
+## a consumer's predicted fatty acid proportion should be by accounting for
+## the modeled diet proprtion of a given food source, the fatty acid profiles of 
+## potential food sources, and trophic discrimination factors as determined by 
+## Schram et al (2019; DOI: 10.1017/S0954102019000397). As MixSIAR produces 
+## predicted diet proprtions in an additive manner, the below routine broadly
+## produces a data frame that would make for analytically-friendly biomarker 
+## addition across colunmns. 
+
+## Step 1: Format algal fatty acid proprtion in a long format that's amenable for 
+## joining with invertebrates.
 producers_whole_long <- producers_whole %>%
   pivot_longer(cols = c(c14_0:std22_6w3),
                names_to = "fatty_acid", values_to = "props") %>%
@@ -393,6 +405,7 @@ producers_whole_long <- producers_whole %>%
                                         replacement = "SDc", 
                                         x = fatty_acid),
                              no = fatty_acid)) %>%
+## Step 2: Join algal fatty acid proportions with TDFs
   inner_join(x = ., 
              y = tdf %>%
                rename(taxon = diet_type) %>%
@@ -400,6 +413,7 @@ producers_whole_long <- producers_whole %>%
                             names_to = "fatty_acid",
                             values_to = "tdf_value")) %>%
   filter(grepl(pattern = "Meanc", x = fatty_acid)) %>%
+## Step 3: Join algal-TDF data with proportion of each source in a consumer's diet
   inner_join(x = .,
              y = p_outputs %>%
                rename(taxon = resources) %>%
@@ -410,9 +424,12 @@ producers_whole_long <- producers_whole %>%
                       taxon = gsub(pattern = "spp.", replacement = "", 
                                    x = taxon, fixed = TRUE),
                       taxon = trimws(taxon))) %>%
+## Step 4: Perform calculation for final proportion of fatty acid for each diet
+## source to a consumer
   mutate(final_prop = (props + tdf_value) * mean_posterior) %>%
   group_by(fatty_acid) %>%
   summarize(total_prop = sum(final_prop)) %>%
+## Step 5: Join consumer file to predicted fatty acid proportions
   inner_join(x = .,
              y = consumer_file %>%
                select(c14_0:c22_6w3) %>%
@@ -424,10 +441,12 @@ producers_whole_long <- producers_whole %>%
                ungroup() %>%
                mutate(fatty_acid = paste0("Mean", fatty_acid))) %>%
   ungroup() %>%
+## Step 6: Calculate RMSE between actual and predicted fatty acids
   mutate(delta_squared = (total_prop - props_actual)^2) %>%
   summarize(rmse = sqrt(sum(delta_squared)/15))
 
 
+## Calculate RMSE to one singleton value for plot label
 rmse <- producers_whole %>%
   pivot_longer(cols = c(c14_0:std22_6w3),
                names_to = "fatty_acid", values_to = "props") %>%
@@ -525,6 +544,8 @@ comparison_data <- rmse_plussd <- producers_whole %>%
                ungroup() %>%
                mutate(fatty_acid = paste0("Mean", fatty_acid)))
 
+## Now we make the plot for the 1:1 relatiship at the individual sample level
+
 individual_one_one_plot <- ggplot(comparison_data, aes(x = total_prop/100,
                             y = props_actual/100)) +
   geom_point(size = 3) +
@@ -558,6 +579,9 @@ individual_one_one_plot <- ggplot(comparison_data, aes(x = total_prop/100,
   
 ggsave(filename = "mixsiar_individual_one_to_one_plot.png", plot = individual_one_one_plot, 
        device = "png", path = "../figures/", width = 7, height = 5, units = "in")
+
+
+## We now redo the analysis for the mean across individuals
 
 rmse <- producers_whole %>%
   pivot_longer(cols = c(c14_0:std22_6w3),
